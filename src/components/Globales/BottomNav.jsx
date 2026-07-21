@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 
 const TABS = [
-  { to: '/', label: 'Inicio', icon: 'ph-house', end: true },
+  { to: '/inicio', label: 'Inicio', icon: 'ph-house', end: true },
   { to: '/asistencia', label: 'Asistencia', icon: 'ph-calendar-check' },
   { to: '/esquemas', label: 'Esquemas', icon: 'ph-stack' },
   { to: '/alertas', label: 'Alertas', icon: 'ph-warning', badge: 3 },

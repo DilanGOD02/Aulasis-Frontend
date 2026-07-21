@@ -1,17 +1,29 @@
 import { useState } from 'react';
+import RubricaDesignerModal from './RubricaDesignerModal';
 
 // Soft pastel tones — same spirit as the attendance status cards, not the vivid brand palette.
 const DOT_COLORS = ['#A5B4FC', '#7DD3FC', '#FCD34D', '#F9A8D4', '#C4B5FD', '#86EFAC'];
+const TOLERANCIA_PESO = 0.5;
 
-let nextCategoryId = 1000;
-let nextItemId = 1000;
-const newCategory = () => ({ id: nextCategoryId++, name: 'Nueva categoría', weight: 0, items: [] });
-const newItem = () => ({ id: nextItemId++, name: 'Nuevo ítem', weight: 0 });
+// IDs negativos = "todavía no existe en la BD" (los reales del backend siempre son positivos).
+// Así toEsquemaPayload sabe cuáles mandar como actualización y cuáles como creación nueva.
+let nextCategoryId = -1;
+let nextItemId = -1;
+const newCategory = () => ({ id: nextCategoryId--, name: 'Nueva categoría', weight: 0, items: [], puntajeDirecto: false });
+const newItem = () => ({ id: nextItemId--, name: 'Nuevo ítem', weight: 0 });
 
 function categorySubtitle(category) {
   if (category.auto) return 'Calculada automáticamente';
-  if (!category.items.length) return 'Sin items · puntaje directo';
+  if (category.puntajeDirecto) return 'Una sola evaluación · puntaje directo';
+  if (!category.items.length) return 'Sin items todavía';
   return `${category.items.length} items · subdividido`;
+}
+
+/** Suma de los items de una categoría vs. lo que debería sumar (el peso de esa categoría). */
+function itemsSumInfo(category) {
+  const suma = category.items.reduce((acc, it) => acc + Number(it.weight || 0), 0);
+  const esperado = Number(category.weight || 0);
+  return { suma, esperado, ok: Math.abs(suma - esperado) <= TOLERANCIA_PESO };
 }
 
 /**
@@ -19,6 +31,11 @@ function categorySubtitle(category) {
  * (creating/editing a template in the Esquemas module) and inside a group's
  * Esquema tab. Pass a different `initialCategories` + remount via `key` on the
  * parent to reset the form when the user picks a different starting template.
+ *
+ * El peso de cada item es su parte del TOTAL del esquema (no un % relativo a
+ * su categoría) — los items de una categoría deben sumar el mismo peso que
+ * esa categoría. Una categoría marcada "una sola evaluación" no se subdivide:
+ * se califica directo, sin items (el backend ya soporta esto).
  */
 function SchemaBuilderForm({
   initialCategories,
@@ -27,8 +44,16 @@ function SchemaBuilderForm({
   onTemplateNameChange,
   onSave,
 }) {
-  const [categories, setCategories] = useState(initialCategories);
-  const [expanded, setExpanded] = useState(() => new Set(initialCategories.filter((c) => c.items.length).map((c) => c.id)));
+  const [categories, setCategories] = useState(() =>
+    initialCategories.map((c) => ({
+      puntajeDirecto: !c.auto && (c.items?.length ?? 0) === 0,
+      ...c,
+    })),
+  );
+  const [expanded, setExpanded] = useState(
+    () => new Set(initialCategories.filter((c) => c.items.length).map((c) => c.id)),
+  );
+  const [rubricaAbierta, setRubricaAbierta] = useState(null); // { categoryId, itemId, itemNombre } | null
 
   const total = categories.reduce((sum, c) => sum + Number(c.weight || 0), 0);
   const isComplete = total === 100;
@@ -37,6 +62,14 @@ function SchemaBuilderForm({
     setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
   const removeCategory = (id) => setCategories((prev) => prev.filter((c) => c.id !== id));
   const addCategory = () => setCategories((prev) => [...prev, newCategory()]);
+
+  const togglePuntajeDirecto = (id) => {
+    setCategories((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, puntajeDirecto: !c.puntajeDirecto, items: [] } : c)),
+    );
+    // Al desmarcar (pasa a "subdividir"), abrimos la lista de items de una vez.
+    setExpanded((prev) => new Set(prev).add(id));
+  };
 
   const toggleExpanded = (id) =>
     setExpanded((prev) => {
@@ -79,15 +112,15 @@ function SchemaBuilderForm({
 
         <p className="mb-4 text-[14px] font-medium text-[#64748B]">
           Agregá categorías y asigná su peso. El total debe sumar exactamente{' '}
-          <strong className="text-[#1E293B]">100%</strong>.{' '}
-          <span className="font-bold text-[var(--brand)]">Editá los pesos abajo</span> para ver el indicador
-          reaccionar.
+          <strong className="text-[#1E293B]">100%</strong>. Si subdividís una categoría en items, esos items deben
+          sumar entre sí el mismo peso que la categoría — no un 100% aparte.
         </p>
 
         <div className="flex flex-col gap-2.5">
           {categories.map((c, i) => {
             const isOpen = expanded.has(c.id);
             const color = c.auto ? '#CBD5E1' : DOT_COLORS[i % DOT_COLORS.length];
+            const itemsInfo = !c.auto && !c.puntajeDirecto ? itemsSumInfo(c) : null;
 
             return (
               <div key={c.id}>
@@ -128,7 +161,8 @@ function SchemaBuilderForm({
                     <button
                       type="button"
                       onClick={() => toggleExpanded(c.id)}
-                      className="press shrink-0 text-[#94A3B8]"
+                      disabled={c.puntajeDirecto}
+                      className="press shrink-0 text-[#94A3B8] disabled:opacity-30"
                       aria-label={isOpen ? 'Contraer' : 'Expandir'}
                     >
                       <i className={`ph-bold ${isOpen ? 'ph-caret-up' : 'ph-caret-down'} text-[15px]`} />
@@ -146,14 +180,47 @@ function SchemaBuilderForm({
                   )}
                 </div>
 
-                {!c.auto && isOpen && (
+                {!c.auto && (
+                  <label className="mt-1.5 flex items-center gap-2 pl-[44px] text-[12.5px] font-semibold text-[#64748B]">
+                    <input
+                      type="checkbox"
+                      checked={c.puntajeDirecto}
+                      onChange={() => togglePuntajeDirecto(c.id)}
+                      className="h-3.5 w-3.5 accent-[var(--brand)]"
+                    />
+                    Una sola evaluación (no hace falta agregar items — ej. Asistencia, Proyecto)
+                  </label>
+                )}
+
+                {!c.auto && !c.puntajeDirecto && isOpen && (
                   <div className="mt-2 flex flex-col gap-1.5 pl-[44px]">
                     {c.items.map((item) => (
                       <div
                         key={item.id}
                         className="flex items-center gap-2.5 rounded-[11px] border border-[#EEF1F6] bg-[#FAFBFD] px-3 py-2"
                       >
-                        <i className="ph ph-file shrink-0 text-[15px] text-[#94A3B8]" />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            item.id > 0 &&
+                            setRubricaAbierta({ categoryId: c.id, itemId: item.id, itemNombre: item.name })
+                          }
+                          disabled={!(item.id > 0)}
+                          title={
+                            item.id > 0
+                              ? item.tieneRubrica
+                                ? 'Ver/editar rúbrica'
+                                : 'Agregar rúbrica'
+                              : 'Guardá el esquema primero para agregarle una rúbrica a este ítem'
+                          }
+                          className="press shrink-0 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <i
+                            className={`${item.tieneRubrica ? 'ph-fill' : 'ph'} ph-file shrink-0 text-[15px] ${
+                              item.tieneRubrica ? 'text-[var(--brand)]' : 'text-[#94A3B8]'
+                            }`}
+                          />
+                        </button>
                         <input
                           value={item.name}
                           onChange={(e) => updateItem(c.id, item.id, { name: e.target.value })}
@@ -168,7 +235,7 @@ function SchemaBuilderForm({
                             }
                             className="w-8 border-none bg-transparent text-right outline-none"
                           />
-                          % del rubro
+                          % del total
                         </div>
                         <button
                           type="button"
@@ -188,6 +255,18 @@ function SchemaBuilderForm({
                       <i className="ph-bold ph-plus text-[14px]" />
                       Agregar ítem
                     </button>
+
+                    {c.items.length > 0 && itemsInfo && (
+                      <div
+                        className="flex items-center gap-1.5 text-[12px] font-bold"
+                        style={{ color: itemsInfo.ok ? '#15803D' : '#DC2626' }}
+                      >
+                        <i className={`ph-fill ${itemsInfo.ok ? 'ph-check-circle' : 'ph-warning-circle'} text-[14px]`} />
+                        Suma de items: {itemsInfo.suma}/{itemsInfo.esperado}%
+                        {!itemsInfo.ok &&
+                          ` · ${itemsInfo.suma > itemsInfo.esperado ? 'sobran' : 'faltan'} ${Math.abs(itemsInfo.esperado - itemsInfo.suma)}%`}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -271,6 +350,17 @@ function SchemaBuilderForm({
           </button>
         </div>
       </div>
+
+      {rubricaAbierta && (
+        <RubricaDesignerModal
+          itemId={rubricaAbierta.itemId}
+          itemNombre={rubricaAbierta.itemNombre}
+          onClose={() => setRubricaAbierta(null)}
+          onSaved={(tieneRubrica) =>
+            updateItem(rubricaAbierta.categoryId, rubricaAbierta.itemId, { tieneRubrica })
+          }
+        />
+      )}
     </div>
   );
 }

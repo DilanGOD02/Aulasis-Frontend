@@ -23,9 +23,11 @@ function GradeDistributionCard({ distribution, progress }) {
         ))}
       </div>
 
-      <div className="mt-[18px]">
-        <ProgressBar label="Avance del periodo" value={progress} />
-      </div>
+      {progress != null && (
+        <div className="mt-[18px]">
+          <ProgressBar label="Avance del periodo" value={progress} />
+        </div>
+      )}
     </div>
   );
 }

@@ -23,7 +23,7 @@ function StudentIdentityCard({ student, group }) {
             Promedio
           </div>
           <div className="mt-1 text-[26px] font-extrabold leading-none" style={{ color: student.status.color }}>
-            {student.avg.toFixed(1)}
+            {student.avg != null ? student.avg.toFixed(1) : '—'}
           </div>
           <div className="mt-1 text-[12px] font-bold" style={{ color: student.status.color }}>
             {student.status.label}
@@ -33,10 +33,30 @@ function StudentIdentityCard({ student, group }) {
           <div className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--brand-dark)]">
             Asistencia
           </div>
-          <div className="mt-1 text-[26px] font-extrabold leading-none text-[var(--brand-dark)]">
-            {student.attendance}%
-          </div>
-          <div className="mt-1 text-[12px] font-bold text-[var(--brand-dark)]">del periodo</div>
+          {student.asistenciaCounts ? (
+            <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
+              <div>
+                <span className="text-[19px] font-extrabold leading-none text-[#16A34A]">
+                  {student.asistenciaCounts.presente}
+                </span>
+                <div className="text-[10.5px] font-bold text-[#64748B]">presente</div>
+              </div>
+              <div>
+                <span className="text-[19px] font-extrabold leading-none text-[#C2410C]">
+                  {student.asistenciaCounts.tardia}
+                </span>
+                <div className="text-[10.5px] font-bold text-[#64748B]">tardía</div>
+              </div>
+              <div>
+                <span className="text-[19px] font-extrabold leading-none text-[#DC2626]">
+                  {student.asistenciaCounts.ausente}
+                </span>
+                <div className="text-[10.5px] font-bold text-[#64748B]">ausente</div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-1 text-[26px] font-extrabold leading-none text-[var(--brand-dark)]">—</div>
+          )}
         </div>
       </div>
     </div>

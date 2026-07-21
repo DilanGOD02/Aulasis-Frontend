@@ -13,8 +13,9 @@ function SummaryTab() {
       </div>
 
       <GroupSideStats
+        groupId={group.id}
         nextClassSchedule={group.nextClassSchedule}
-        studentCount={parseInt(group.sub, 10)}
+        studentCount={group.studentCount}
         avgGeneral={group.avgGeneral}
       />
     </div>

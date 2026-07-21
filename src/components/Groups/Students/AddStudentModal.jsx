@@ -1,29 +1,32 @@
 import { useState } from 'react';
-
-// Mock institution-wide roster used only to demo the "cédula ya existe -> autocompleta
-// y solo matricula" flow described for the real backend. Try 1-1234-5678 or 1-0937-0452.
-const MOCK_EXISTING_STUDENTS = [
-  { cedula: '1-1234-5678', nombre: 'Carlos', apellidos: 'Ramírez Solano' },
-  { cedula: '1-0937-0452', nombre: 'Valeria', apellidos: 'Jiménez Castro' },
-];
+import { estudiantesService } from '../../../services/estudiantesService';
 
 /**
- * "Agregar estudiante" modal: cédula, nombre, apellidos. If the cédula matches someone
- * already registered elsewhere in the institution, name fields autofill and lock — the
- * action becomes "matricular" instead of "crear". Visual only for now (no backend yet).
+ * "Agregar estudiante" modal: cédula, nombre, apellidos. Si la cédula ya
+ * existe en la institución, los campos de nombre se autocompletan y se
+ * bloquean — la acción pasa a ser "matricular" en vez de "crear".
  */
-function AddStudentModal({ onClose }) {
+function AddStudentModal({ onClose, onSubmit }) {
   const [cedula, setCedula] = useState('');
   const [nombre, setNombre] = useState('');
   const [apellidos, setApellidos] = useState('');
   const [existing, setExisting] = useState(null);
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleCedulaBlur = () => {
-    const match = MOCK_EXISTING_STUDENTS.find((s) => s.cedula === cedula.trim());
-    setExisting(match ?? null);
-    if (match) {
-      setNombre(match.nombre);
-      setApellidos(match.apellidos);
+  const handleCedulaBlur = async () => {
+    if (!cedula.trim()) return;
+    try {
+      const result = await estudiantesService.buscarPorCedula(cedula.trim());
+      if (result.found) {
+        setExisting(result);
+        setNombre(result.nombre ?? '');
+        setApellidos(result.apellidos ?? '');
+      } else {
+        setExisting(null);
+      }
+    } catch {
+      setExisting(null);
     }
   };
 
@@ -36,9 +39,18 @@ function AddStudentModal({ onClose }) {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onClose();
+    setError('');
+    setIsSubmitting(true);
+    try {
+      await onSubmit({ cedula: cedula.trim(), nombre, apellidos });
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -55,6 +67,7 @@ function AddStudentModal({ onClose }) {
           <div>
             <label className="mb-1.5 block text-[13px] font-bold text-[#475569]">Cédula</label>
             <input
+              required
               value={cedula}
               onChange={(e) => handleCedulaChange(e.target.value)}
               onBlur={handleCedulaBlur}
@@ -73,6 +86,7 @@ function AddStudentModal({ onClose }) {
           <div>
             <label className="mb-1.5 block text-[13px] font-bold text-[#475569]">Nombre</label>
             <input
+              required
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               disabled={!!existing}
@@ -84,6 +98,7 @@ function AddStudentModal({ onClose }) {
           <div>
             <label className="mb-1.5 block text-[13px] font-bold text-[#475569]">Apellidos</label>
             <input
+              required
               value={apellidos}
               onChange={(e) => setApellidos(e.target.value)}
               disabled={!!existing}
@@ -91,6 +106,8 @@ function AddStudentModal({ onClose }) {
               className="w-full rounded-[11px] border border-[#E2E8F0] px-3.5 py-3 text-[14.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)] disabled:bg-[#F8FAFC] disabled:text-[#94A3B8]"
             />
           </div>
+
+          {error && <div className="text-[13px] font-bold text-[#DC2626]">{error}</div>}
 
           <div className="mt-2 flex gap-2.5">
             <button
@@ -102,9 +119,10 @@ function AddStudentModal({ onClose }) {
             </button>
             <button
               type="submit"
-              className="press flex-1 rounded-[12px] bg-[var(--brand)] py-3 text-[14.5px] font-extrabold text-white"
+              disabled={isSubmitting}
+              className="press flex-1 rounded-[12px] bg-[var(--brand)] py-3 text-[14.5px] font-extrabold text-white disabled:opacity-60"
             >
-              {existing ? 'Matricular' : 'Agregar estudiante'}
+              {isSubmitting ? 'Guardando…' : existing ? 'Matricular' : 'Agregar estudiante'}
             </button>
           </div>
         </form>

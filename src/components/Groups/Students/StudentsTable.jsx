@@ -17,7 +17,7 @@ function StudentsTable({ students }) {
 
         {students.map((student) => (
           <div
-            key={student.name}
+            key={student.id}
             onClick={() => navigate(`/grupos/${groupId}/estudiantes/${student.id}`)}
             className="press grid grid-cols-[1.7fr_90px_90px_124px] items-center border-t border-[#F4F6F9]"
             style={{ background: student.status.bg }}
@@ -32,9 +32,11 @@ function StudentsTable({ students }) {
               className="text-center text-[15.5px] font-extrabold"
               style={{ color: student.status.key === 'ok' ? '#0F172A' : student.status.color }}
             >
-              {student.avg.toFixed(1)}
+              {student.avg != null ? student.avg.toFixed(1) : '—'}
             </div>
-            <div className="text-center text-[13.5px] font-semibold text-[#475569]">{student.attendance}%</div>
+            <div className="text-center text-[13.5px] font-semibold text-[#475569]">
+              {student.attendance != null ? `${student.attendance}%` : '—'}
+            </div>
             <div className="px-4 py-2 text-right">
               <span
                 className="whitespace-nowrap rounded-full px-2.5 py-1 text-[10.5px] font-extrabold text-white"

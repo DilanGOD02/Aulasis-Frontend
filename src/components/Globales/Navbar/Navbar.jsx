@@ -1,8 +1,15 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { FONT } from '../colors';
+import { useAuth } from '../../../context/AuthContext';
+
+function getInitials(nombre) {
+  if (!nombre) return '';
+  const partes = nombre.trim().split(/\s+/);
+  return ((partes[0]?.[0] ?? '') + (partes[1]?.[0] ?? '')).toUpperCase();
+}
 
 const NAV_LINKS = [
-  { to: '/', label: 'Inicio', icon: 'ph-house', end: true },
+  { to: '/inicio', label: 'Inicio', icon: 'ph-house', end: true },
   { to: '/esquemas', label: 'Esquemas', icon: 'ph-stack' },
 ];
 
@@ -36,12 +43,13 @@ function NavItem({ to, label, icon, end }) {
  */
 function Navbar() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   return (
     <div className="sticky top-0 z-50 flex-shrink-0 border-b border-[#EEF1F6] bg-white">
       <div className="flex h-[60px] items-center gap-3 px-4 sm:px-5 md:gap-4">
         {/* brand */}
-        <div className="press flex items-center gap-2.5" onClick={() => navigate('/')}>
+        <div className="press flex items-center gap-2.5" onClick={() => navigate('/inicio')}>
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[var(--brand)]">
             <i className="ph-bold ph-check-square text-[17px] text-white" />
           </div>
@@ -79,12 +87,15 @@ function Navbar() {
             <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-[1.5px] border-white bg-[#DC2626]" />
           </button>
 
-          <div
-            className="hidden h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full text-[14px] font-extrabold text-white sm:flex"
+          <button
+            type="button"
+            onClick={logout}
+            title="Cerrar sesión"
+            className="press hidden h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full text-[14px] font-extrabold text-white sm:flex"
             style={{ background: 'linear-gradient(140deg, #7C3AED, #DB2777)' }}
           >
-            MJ
-          </div>
+            {getInitials(user?.nombre)}
+          </button>
         </div>
       </div>
     </div>

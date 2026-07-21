@@ -1,30 +1,68 @@
 // Builds the Notas grid's columns and filter pills from the group's own
-// evaluation schema, instead of a fixed C1/C2/P1/P2/T1/T2/Proy layout — so the
-// table always matches whatever categories/items a group's schema actually has.
+// evaluation schema, instead of a fixed layout — so the table always matches
+// whatever categories/items a group's schema actually has. Cada categoría
+// siempre tiene al menos un item real (el backend crea uno implícito para
+// las categorías "sin items · puntaje directo"), así que las columnas
+// siempre se arman a partir de item.id.
 
-function leafKeysOf(category) {
-  return category.items.length ? category.items.map((i) => i.gradeKey) : category.gradeKeys ?? [];
-}
+// Un color fijo por categoría — mismo criterio en la tabla en pantalla y en
+// los archivos exportados (PDF/Excel), así el agrupado visual es consistente.
+export const CATEGORY_PALETTE = ['4F46E5', '0EA5E9', '16A34A', 'D97706', 'DB2777', '7C3AED', '0D9488', 'B45309'];
 
 /**
- * One column per graded leaf (item, or plain category grade), plus a
- * read-only "total" column for any category with more than one leaf.
- * Attendance ("auto") categories are excluded — they aren't hand-graded.
+ * One column per graded leaf item, plus a read-only "total" column for any
+ * category with more than one item. Attendance ("auto") categories are
+ * excluded — they aren't hand-graded. Cada columna queda etiquetada con los
+ * datos de su categoría (id/nombre/peso/color) para poder agrupar el
+ * encabezado visualmente.
  */
 export function buildGradeColumns(schema) {
   const columns = [];
 
   schema
     .filter((c) => !c.auto)
-    .forEach((category) => {
-      const keys = leafKeysOf(category);
-      keys.forEach((key) => columns.push({ key, header: key.toUpperCase(), type: 'leaf' }));
-      if (keys.length > 1) {
-        columns.push({ key: `total-${category.id}`, header: category.name, type: 'total', leafKeys: keys });
+    .forEach((category, idx) => {
+      const color = `#${CATEGORY_PALETTE[idx % CATEGORY_PALETTE.length]}`;
+      const categoryMeta = { categoryId: category.id, categoryName: category.name, categoryWeight: category.weight ?? 0, color };
+
+      category.items.forEach((item) =>
+        columns.push({
+          key: item.id,
+          header: item.name.toUpperCase(),
+          type: 'leaf',
+          valorMaximo: item.valorMaximo ?? 100,
+          weight: item.weight ?? 0,
+          tieneRubrica: !!item.tieneRubrica,
+          ...categoryMeta,
+        }),
+      );
+      if (category.items.length > 1) {
+        columns.push({
+          key: `total-${category.id}`,
+          header: 'TOTAL',
+          type: 'total',
+          leafKeys: category.items.map((i) => i.id),
+          ...categoryMeta,
+        });
       }
     });
 
   return columns;
+}
+
+/**
+ * Agrupa columnas consecutivas de la misma categoría — para pintar un
+ * encabezado de 2 filas (nombre+peso de la categoría arriba, columna
+ * individual abajo) tanto en la tabla en pantalla como en las exportaciones.
+ */
+export function groupColumnsByCategory(columns) {
+  const groups = [];
+  columns.forEach((col) => {
+    const last = groups[groups.length - 1];
+    if (last && last.categoryId === col.categoryId) last.count += 1;
+    else groups.push({ categoryId: col.categoryId, name: col.categoryName, weight: col.categoryWeight, color: col.color, count: 1 });
+  });
+  return groups;
 }
 
 /** "Todas · 100%" + one pill per non-auto category, each isolating that category's columns. */
@@ -33,7 +71,7 @@ export function buildGradeFilters(schema) {
   const total = schema.reduce((sum, c) => sum + Number(c.weight || 0), 0);
 
   const perCategory = gradable.map((c) => {
-    const keys = leafKeysOf(c);
+    const keys = c.items.map((i) => i.id);
     const columnKeys = keys.length > 1 ? [...keys, `total-${c.id}`] : keys;
     return { key: `cat-${c.id}`, label: c.name, weight: c.weight, columnKeys };
   });
