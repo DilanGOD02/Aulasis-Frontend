@@ -42,7 +42,7 @@ function NavItem({ to, label, icon, end }) {
  * notifications bell and avatar. Nav links move to the bottom tab bar on
  * mobile (see BottomNav), so this bar stays compact on small screens.
  */
-function Navbar() {
+function Navbar({ unseenRiskCount = 0 }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -62,10 +62,7 @@ function Navbar() {
       <div className="flex h-[60px] items-center gap-3 px-4 sm:px-5 md:gap-4">
         {/* brand */}
         <div className="press flex items-center gap-2.5" onClick={() => navigate('/inicio')}>
-          <div
-            className="h-9 w-9 shrink-0"
-            style={{ backgroundImage: 'url(/logo.png)', backgroundSize: '290% auto', backgroundPosition: '50% 20%', backgroundRepeat: 'no-repeat' }}
-          />
+          <img src="/logo.png" alt="" className="h-9 w-auto shrink-0 object-contain" />
           <span
             className="whitespace-nowrap text-[17px] font-extrabold tracking-tight text-[#0F172A]"
             style={{ fontFamily: FONT.display }}
@@ -97,7 +94,9 @@ function Navbar() {
             className="press relative flex h-10 w-10 items-center justify-center rounded-[11px] bg-[#EEF2F7]"
           >
             <i className="ph ph-bell text-[20px] text-[#475569]" />
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-[1.5px] border-white bg-[#DC2626]" />
+            {unseenRiskCount > 0 && (
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-[1.5px] border-white bg-[#DC2626]" />
+            )}
           </button>
 
           <div className="relative hidden sm:block" ref={menuRef}>

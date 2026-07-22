@@ -3,6 +3,7 @@ import { PageHeader } from '../../components/Globales';
 import { RiskFilterTabs, RiskStudentCard } from '../../components/RiskAlert';
 import { riesgoService } from '../../services/riesgoService';
 import { mapRiesgoEstudiante } from '../../utils/mappers';
+import { markAllSeen } from '../../utils/alertsSeen';
 
 function RiskAlertPage() {
   const [filter, setFilter] = useState('todas');
@@ -12,7 +13,11 @@ function RiskAlertPage() {
   useEffect(() => {
     riesgoService
       .listar()
-      .then((data) => setStudents(data.map(mapRiesgoEstudiante)))
+      .then((data) => {
+        const mapped = data.map(mapRiesgoEstudiante);
+        setStudents(mapped);
+        markAllSeen(mapped);
+      })
       .finally(() => setIsLoading(false));
   }, []);
 

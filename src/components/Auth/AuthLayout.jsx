@@ -19,12 +19,9 @@ function AuthLayout({ title, description, stats, children }) {
           <div className="pointer-events-none absolute -bottom-20 right-[30px] h-[180px] w-[180px] rounded-full bg-white/[0.07]" />
 
           <div className="relative">
-            <div className="mb-10 flex items-center gap-2.5">
-              <div
-                className="h-10 w-10 shrink-0"
-                style={{ backgroundImage: 'url(/logo.png)', backgroundSize: '290% auto', backgroundPosition: '50% 20%', backgroundRepeat: 'no-repeat' }}
-              />
-              <span className="text-[21px] font-extrabold" style={{ fontFamily: FONT.display }}>
+            <div className="mb-10 flex items-center gap-3">
+              <img src="/Logo.png" alt="" className="h-16 w-auto shrink-0 object-contain" />
+              <span className="text-[24px] font-extrabold" style={{ fontFamily: FONT.display }}>
                 Aulasis
               </span>
             </div>
@@ -55,10 +52,7 @@ function AuthLayout({ title, description, stats, children }) {
         {/* form panel */}
         <div className="flex min-w-[300px] flex-1 flex-col justify-center p-6 sm:p-10">
           <div className="mb-7 flex items-center gap-2.5 md:hidden">
-            <div
-              className="h-8 w-8 shrink-0"
-              style={{ backgroundImage: 'url(/logo.png)', backgroundSize: '290% auto', backgroundPosition: '50% 20%', backgroundRepeat: 'no-repeat' }}
-            />
+            <img src="/Logo.png" alt="" className="h-9 w-auto shrink-0 object-contain" />
             <span className="text-[17px] font-extrabold text-[#0F172A]" style={{ fontFamily: FONT.display }}>
               Aulasis
             </span>
