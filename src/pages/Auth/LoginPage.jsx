@@ -1,15 +1,21 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { AuthLayout, PasswordField } from '../../components/Auth';
 import { FONT } from '../../components/Globales/colors';
 import { useAuth } from '../../context/AuthContext';
 
 function LoginPage() {
-  const { login } = useAuth();
+  const { login, isAuthenticated, isLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // "/" y "/login" apuntan acá sin pasar por ProtectedRoute — si ya hay
+  // sesión (la cookie httpOnly la restauró al montar AuthProvider), hay que
+  // mandar a /inicio en vez de mostrar el formulario de nuevo.
+  if (isLoading) return null;
+  if (isAuthenticated) return <Navigate to="/inicio" replace />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();

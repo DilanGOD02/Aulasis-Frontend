@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { FONT } from '../colors';
 import { useAuth } from '../../../context/AuthContext';
@@ -44,15 +45,27 @@ function NavItem({ to, label, icon, end }) {
 function Navbar() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [menuOpen]);
 
   return (
     <div className="sticky top-0 z-50 flex-shrink-0 border-b border-[#EEF1F6] bg-white">
       <div className="flex h-[60px] items-center gap-3 px-4 sm:px-5 md:gap-4">
         {/* brand */}
         <div className="press flex items-center gap-2.5" onClick={() => navigate('/inicio')}>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[var(--brand)]">
-            <i className="ph-bold ph-check-square text-[17px] text-white" />
-          </div>
+          <div
+            className="h-9 w-9 shrink-0"
+            style={{ backgroundImage: 'url(/logo.png)', backgroundSize: '290% auto', backgroundPosition: '50% 20%', backgroundRepeat: 'no-repeat' }}
+          />
           <span
             className="whitespace-nowrap text-[17px] font-extrabold tracking-tight text-[#0F172A]"
             style={{ fontFamily: FONT.display }}
@@ -87,15 +100,38 @@ function Navbar() {
             <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-[1.5px] border-white bg-[#DC2626]" />
           </button>
 
-          <button
-            type="button"
-            onClick={logout}
-            title="Cerrar sesión"
-            className="press hidden h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full text-[14px] font-extrabold text-white sm:flex"
-            style={{ background: 'linear-gradient(140deg, #7C3AED, #DB2777)' }}
-          >
-            {getInitials(user?.nombre)}
-          </button>
+          <div className="relative hidden sm:block" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              title={user?.nombre ?? 'Cuenta'}
+              className="press flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full text-[14px] font-extrabold text-white"
+              style={{ background: 'linear-gradient(140deg, #7C3AED, #DB2777)' }}
+            >
+              {getInitials(user?.nombre)}
+            </button>
+
+            {menuOpen && (
+              <div className="absolute right-0 z-20 mt-1.5 w-56 overflow-hidden rounded-xl border border-[#E8ECF2] bg-white py-1.5 shadow-[0_8px_24px_rgba(16,24,40,0.12)]">
+                {user?.nombre && (
+                  <div className="truncate border-b border-[#F1F4F8] px-3.5 py-2 text-[13px] font-bold text-[#334155]">
+                    {user.nombre}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    logout();
+                  }}
+                  className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-[13px] font-semibold text-[#DC2626] hover:bg-[#FEF2F2]"
+                >
+                  <i className="ph-bold ph-sign-out text-[16px]" />
+                  Cerrar sesión
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
