@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import { Navbar, BottomNav } from '../components/Globales';
+import { Navbar, BottomNav, OnboardingTour } from '../components/Globales';
 
 /** Shared chrome for every screen: top navbar + bottom tab bar (mobile only). */
 function AppLayout() {
@@ -10,6 +10,7 @@ function AppLayout() {
         <Outlet />
       </div>
       <BottomNav />
+      <OnboardingTour />
     </div>
   );
 }

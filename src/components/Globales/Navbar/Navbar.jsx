@@ -11,7 +11,7 @@ function getInitials(nombre) {
 
 const NAV_LINKS = [
   { to: '/inicio', label: 'Inicio', icon: 'ph-house', end: true },
-  { to: '/esquemas', label: 'Esquemas', icon: 'ph-stack' },
+  { to: '/esquemas', label: 'Esquemas de evaluación', icon: 'ph-stack' },
 ];
 
 function NavItem({ to, label, icon, end }) {
