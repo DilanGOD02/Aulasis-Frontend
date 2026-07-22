@@ -39,7 +39,7 @@ function TemplateBuilderPage() {
   if (!isNew && notFound) {
     return (
       <>
-        <PageHeader title="Plantilla no encontrada" crumb="Esquemas" showBack />
+        <PageHeader title="Plantilla no encontrada" crumb="Esquemas de evaluación" showBack />
         <div className="flex flex-1 items-center justify-center px-6 py-16 text-center text-[15px] font-semibold text-[#94A3B8]">
           No encontramos esa plantilla. Puede que haya sido eliminada.
         </div>
@@ -63,7 +63,7 @@ function TemplateBuilderPage() {
 
   return (
     <>
-      <PageHeader title="Constructor de evaluación" crumb="Esquemas" showBack />
+      <PageHeader title="Constructor de evaluación" crumb="Esquemas de evaluación" showBack />
       <div className="flex-1 px-4 py-5 sm:px-6 sm:py-6">
         {error && (
           <div className="mb-4 rounded-[11px] bg-[#FEF2F2] px-3.5 py-2.5 text-[13px] font-bold text-[#DC2626]">
