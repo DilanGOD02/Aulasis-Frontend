@@ -74,4 +74,12 @@ export const authService = {
     const response = await apiFetch('/auth/me');
     return parseJsonOrThrow(response);
   },
+
+  /** Precios y datos de pago (SINPE/PayPal) para la pantalla de renovación — pública. */
+  async planes() {
+    const response = await fetch(`${apiBaseUrl}/auth/planes`, {
+      headers: { 'x-tenant-slug': getTenantSlug() },
+    });
+    return parseJsonOrThrow(response);
+  },
 };

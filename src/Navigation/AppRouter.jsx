@@ -4,6 +4,7 @@ import ProtectedRoute from './ProtectedRoute';
 import AppLayout from './AppLayout';
 import LoginPage from '../pages/Auth/LoginPage';
 import RegisterPage from '../pages/Auth/RegisterPage';
+import PlansInfoPage from '../pages/Auth/PlansInfoPage';
 import ForgotPasswordPage from '../pages/Auth/ForgotPasswordPage';
 import MainScreen from '../pages/MainScreen/MainScreen';
 import EvaluationFrameworksPage from '../pages/EvaluationFrameworks/EvaluationFrameworksPage';
@@ -19,6 +20,8 @@ import StudentsTab from '../pages/Groups/tabs/StudentsTab';
 import GradesTab from '../pages/Groups/tabs/GradesTab';
 import AttendanceTab from '../pages/Groups/tabs/AttendanceTab';
 import EvaluationFrameworkTab from '../pages/Groups/tabs/EvaluationFrameworkTab';
+import AdminTeachersPage from '../pages/Admin/AdminTeachersPage';
+import AdminRoute from './AdminRoute';
 
 function AppRouter() {
   return (
@@ -29,7 +32,8 @@ function AppRouter() {
               "/" ES la pantalla de login — es la primera vista del proyecto. */}
           <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/registro" element={<RegisterPage />} />
+          <Route path="/registro" element={<PlansInfoPage />} />
+          <Route path="/registro/crear" element={<RegisterPage />} />
           <Route path="/olvide-contrasena" element={<ForgotPasswordPage />} />
 
           {/* Sin index a propósito: AppLayout no debe renderizar nada para el "/" bare —
@@ -41,6 +45,10 @@ function AppRouter() {
               <Route path="esquemas/:templateId" element={<TemplateBuilderPage />} />
               <Route path="alertas" element={<RiskAlertPage />} />
               <Route path="asistencia" element={<AttendancePage />} />
+
+              <Route element={<AdminRoute />}>
+                <Route path="admin/profesores" element={<AdminTeachersPage />} />
+              </Route>
 
               {/* Static "crear" is more specific than :groupId, so it always wins the match. */}
               <Route path="grupos/crear" element={<CreateGroupPage />} />

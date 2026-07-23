@@ -14,6 +14,8 @@ const NAV_LINKS = [
   { to: '/esquemas', label: 'Esquemas de evaluación', icon: 'ph-stack' },
 ];
 
+const ADMIN_LINK = { to: '/admin/profesores', label: 'Profesores', icon: 'ph-users-three' };
+
 function NavItem({ to, label, icon, end }) {
   return (
     <NavLink
@@ -76,6 +78,7 @@ function Navbar({ unseenRiskCount = 0 }) {
           {NAV_LINKS.map((link) => (
             <NavItem key={link.to} {...link} />
           ))}
+          {user?.esAdmin && <NavItem {...ADMIN_LINK} />}
         </div>
 
         <div className="ml-auto flex items-center gap-2.5">

@@ -3,11 +3,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { AuthLayout, PasswordField } from '../../components/Auth';
 import { FONT } from '../../components/Globales/colors';
 import { authService } from '../../services/authService';
+import { useToast } from '../../context/ToastContext';
 
 const ETIQUETAS_SUGERIDAS = ['Prof.', 'Profa.', 'Lic.', 'Licda.', 'Bach.', 'MSc.', 'Ing.', 'Dr.', 'Dra.'];
 
 function RegisterPage() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
@@ -26,6 +28,7 @@ function RegisterPage() {
     setIsSubmitting(true);
     try {
       await authService.register(nombre, email, password, telefono, etiqueta);
+      showToast('Cuenta creada — tenés 7 días de prueba gratis. Iniciá sesión para empezar.', 'success');
       navigate('/login');
     } catch (err) {
       setError(err.message);
