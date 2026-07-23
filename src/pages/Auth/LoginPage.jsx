@@ -33,10 +33,12 @@ function LoginPage() {
   return (
     <AuthLayout
       title="Tus notas y asistencia, sin Excel."
-      description="Cálculo automático de promedios ponderados, control de asistencia y alertas de riesgo. Hecho para el aula costarricense."
-      stats={[
-        { value: '100%', label: 'compatible MEP' },
-        { value: '<1 min', label: 'pasar lista' },
+      description="Todo lo que necesitás para llevar un grupo al día, organizado por periodo y sin hojas de cálculo sueltas."
+      features={[
+        { icon: 'ph-bold ph-calculator', text: 'Promedios ponderados calculados automáticamente' },
+        { icon: 'ph-bold ph-check-square-offset', text: 'Asistencia diaria con historial por fecha' },
+        { icon: 'ph-bold ph-bell-ringing', text: 'Alertas de estudiantes en riesgo académico' },
+        { icon: 'ph-bold ph-table', text: 'Rúbricas y esquemas de evaluación reutilizables' },
       ]}
     >
       <div className="mb-1 text-[24px] font-extrabold text-[#0F172A]" style={{ fontFamily: FONT.display }}>
