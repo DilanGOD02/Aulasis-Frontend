@@ -6,13 +6,16 @@ const SEVERITY = {
 };
 
 /** One row in the consolidated risk list: student, why they're flagged, and a shortcut to their profile. */
-function RiskStudentCard({ student }) {
+function RiskStudentCard({ student, highlighted, cardRef }) {
   const navigate = useNavigate();
   const { border, rowBg, badgeBg, label } = SEVERITY[student.severity];
 
   return (
     <div
-      className="flex items-center gap-3.5 rounded-2xl border p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] sm:p-[18px]"
+      ref={cardRef}
+      className={`flex items-center gap-3.5 rounded-2xl border p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)] sm:p-[18px] ${
+        highlighted ? 'ring-2 ring-[var(--brand)] ring-offset-2' : ''
+      }`}
       style={{ background: rowBg, borderColor: `${border}33`, borderLeft: `4px solid ${border}` }}
     >
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white" style={{ color: border }}>

@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../components/Globales';
 import { RiskFilterTabs, RiskStudentCard } from '../../components/RiskAlert';
 import { riesgoService } from '../../services/riesgoService';
@@ -6,9 +7,12 @@ import { mapRiesgoEstudiante } from '../../utils/mappers';
 import { markAllSeen } from '../../utils/alertsSeen';
 
 function RiskAlertPage() {
+  const [searchParams] = useSearchParams();
+  const highlightKey = searchParams.get('highlight');
   const [filter, setFilter] = useState('todas');
   const [students, setStudents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const highlightRef = useRef(null);
 
   useEffect(() => {
     riesgoService
@@ -20,6 +24,13 @@ function RiskAlertPage() {
       })
       .finally(() => setIsLoading(false));
   }, []);
+
+  // Si se llegó desde "Ver" en un grupo puntual, hace scroll hasta esa alerta apenas está en pantalla.
+  useEffect(() => {
+    if (highlightKey && highlightRef.current) {
+      highlightRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [highlightKey, isLoading]);
 
   const visible = filter === 'todas' ? students : students.filter((s) => s.severity === filter);
 
@@ -43,9 +54,18 @@ function RiskAlertPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {visible.map((student) => (
-              <RiskStudentCard key={`${student.groupId}-${student.studentId}`} student={student} />
-            ))}
+            {visible.map((student) => {
+              const key = `${student.groupId}-${student.studentId}`;
+              const isHighlighted = key === highlightKey;
+              return (
+                <RiskStudentCard
+                  key={key}
+                  student={student}
+                  highlighted={isHighlighted}
+                  cardRef={isHighlighted ? highlightRef : undefined}
+                />
+              );
+            })}
           </div>
         )}
       </div>

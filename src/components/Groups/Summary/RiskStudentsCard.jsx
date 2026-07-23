@@ -7,12 +7,16 @@ const AVATAR_COLORS = [
   { bg: '#FEF3C7', color: '#B45309' },
 ];
 
-function RiskStudentRow({ student, index }) {
+function RiskStudentRow({ student, index, groupId, onVer }) {
   const { bg, color } = AVATAR_COLORS[index % AVATAR_COLORS.length];
   const need = student.avg != null ? Math.max(0, 70 - student.avg) : null;
 
   return (
-    <div className="press flex items-center gap-3.5 border-t border-[#F4F6F9] py-2.5">
+    <button
+      type="button"
+      onClick={() => onVer(groupId, student.id)}
+      className="press flex w-full items-center gap-3.5 border-t border-[#F4F6F9] py-2.5 text-left"
+    >
       <div
         className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full text-[12.5px] font-extrabold"
         style={{ background: bg, color }}
@@ -26,14 +30,15 @@ function RiskStudentRow({ student, index }) {
           {need != null && ` · para 70 +${need.toFixed(1)}`}
         </div>
       </div>
-      <span className="text-[13px] font-bold text-[var(--brand)]">Ver</span>
-    </div>
+      <span className="shrink-0 text-[13px] font-bold text-[var(--brand)]">Ver</span>
+    </button>
   );
 }
 
 /** "Estudiantes que requieren atención" card — students in the "al límite" or "en riesgo" bands. */
-function RiskStudentsCard({ students }) {
+function RiskStudentsCard({ students, groupId }) {
   const navigate = useNavigate();
+  const handleVer = (grupoId, studentId) => navigate(`/alertas?highlight=${grupoId}-${studentId}`);
 
   return (
     <div className="rounded-[18px] border border-[#FCDADA] bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)] sm:p-6">
@@ -58,7 +63,7 @@ function RiskStudentsCard({ students }) {
       ) : (
         <div className="flex flex-col">
           {students.map((student, index) => (
-            <RiskStudentRow key={student.name} student={student} index={index} />
+            <RiskStudentRow key={student.id ?? student.name} student={student} index={index} groupId={groupId} onVer={handleVer} />
           ))}
         </div>
       )}
