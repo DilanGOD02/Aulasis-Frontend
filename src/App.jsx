@@ -1,11 +1,14 @@
 import AppRouter from './Navigation/AppRouter';
 import ErrorBoundary from './components/Globales/ErrorBoundary';
+import { ToastProvider } from './context/ToastContext';
 
 function App() {
   return (
-    <ErrorBoundary>
-      <AppRouter />
-    </ErrorBoundary>
+    <ToastProvider>
+      <ErrorBoundary>
+        <AppRouter />
+      </ErrorBoundary>
+    </ToastProvider>
   );
 }
 

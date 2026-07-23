@@ -4,10 +4,14 @@ import { AuthLayout, PasswordField } from '../../components/Auth';
 import { FONT } from '../../components/Globales/colors';
 import { authService } from '../../services/authService';
 
+const ETIQUETAS_SUGERIDAS = ['Prof.', 'Profa.', 'Lic.', 'Licda.', 'Bach.', 'MSc.', 'Ing.', 'Dr.', 'Dra.'];
+
 function RegisterPage() {
   const navigate = useNavigate();
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [etiqueta, setEtiqueta] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -21,7 +25,7 @@ function RegisterPage() {
     setError('');
     setIsSubmitting(true);
     try {
-      await authService.register(nombre, email, password);
+      await authService.register(nombre, email, password, telefono, etiqueta);
       navigate('/login');
     } catch (err) {
       setError(err.message);
@@ -45,17 +49,38 @@ function RegisterPage() {
       <div className="mb-7 text-[14px] font-medium text-[#64748B]">Solo toma un minuto.</div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div>
-          <label className="mb-1.5 block text-[13px] font-bold text-[#475569]">Nombre completo</label>
-          <div className="flex items-center gap-2.5 rounded-[12px] border border-[#E2E8F0] px-3.5 py-3 focus-within:border-[var(--brand)]">
-            <i className="ph ph-user shrink-0 text-[18px] text-[#94A3B8]" />
-            <input
-              required
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              placeholder="Marielos Jiménez"
-              className="min-w-0 flex-1 border-none bg-transparent text-[14.5px] font-medium text-[#1E293B] outline-none"
-            />
+        <div className="flex gap-3">
+          <div className="w-[110px] shrink-0">
+            <label className="mb-1.5 block text-[13px] font-bold text-[#475569]">Título</label>
+            <div className="flex items-center rounded-[12px] border border-[#E2E8F0] px-3 py-3 focus-within:border-[var(--brand)]">
+              <input
+                list="etiquetas-sugeridas"
+                value={etiqueta}
+                onChange={(e) => setEtiqueta(e.target.value)}
+                placeholder="Lic."
+                maxLength={30}
+                className="min-w-0 flex-1 border-none bg-transparent text-[14.5px] font-medium text-[#1E293B] outline-none"
+              />
+              <datalist id="etiquetas-sugeridas">
+                {ETIQUETAS_SUGERIDAS.map((op) => (
+                  <option key={op} value={op} />
+                ))}
+              </datalist>
+            </div>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <label className="mb-1.5 block text-[13px] font-bold text-[#475569]">Nombre completo</label>
+            <div className="flex items-center gap-2.5 rounded-[12px] border border-[#E2E8F0] px-3.5 py-3 focus-within:border-[var(--brand)]">
+              <i className="ph ph-user shrink-0 text-[18px] text-[#94A3B8]" />
+              <input
+                required
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                placeholder="Marielos Jiménez"
+                className="min-w-0 flex-1 border-none bg-transparent text-[14.5px] font-medium text-[#1E293B] outline-none"
+              />
+            </div>
           </div>
         </div>
 
@@ -69,6 +94,22 @@ function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="marielos.jimenez@mep.go.cr"
+              className="min-w-0 flex-1 border-none bg-transparent text-[14.5px] font-medium text-[#1E293B] outline-none"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-1.5 block text-[13px] font-bold text-[#475569]">Número de teléfono</label>
+          <div className="flex items-center gap-2.5 rounded-[12px] border border-[#E2E8F0] px-3.5 py-3 focus-within:border-[var(--brand)]">
+            <i className="ph ph-phone shrink-0 text-[18px] text-[#94A3B8]" />
+            <input
+              type="tel"
+              required
+              value={telefono}
+              onChange={(e) => setTelefono(e.target.value)}
+              placeholder="8888-8888"
+              maxLength={30}
               className="min-w-0 flex-1 border-none bg-transparent text-[14.5px] font-medium text-[#1E293B] outline-none"
             />
           </div>

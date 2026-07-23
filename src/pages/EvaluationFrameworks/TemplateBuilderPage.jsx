@@ -4,6 +4,7 @@ import { PageHeader } from '../../components/Globales';
 import { SchemaBuilderForm } from '../../components/EvaluationFrameworks';
 import { esquemasService } from '../../services/esquemasService';
 import { mapEsquemaDetail, toEsquemaPayload } from '../../utils/mappers';
+import { useToast } from '../../context/ToastContext';
 
 const EMPTY_CATEGORIES = [
   { id: 1, name: 'Trabajo cotidiano', weight: 30, items: [] },
@@ -14,6 +15,7 @@ const EMPTY_CATEGORIES = [
 function TemplateBuilderPage() {
   const { templateId } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const isNew = templateId === 'nueva';
   const [existing, setExisting] = useState(null);
   const [templateName, setTemplateName] = useState('');
@@ -55,6 +57,7 @@ function TemplateBuilderPage() {
       } else {
         await esquemasService.update(templateId, toEsquemaPayload(categories, nombre));
       }
+      showToast(isNew ? 'Plantilla creada' : 'Plantilla actualizada');
       navigate('/esquemas');
     } catch (err) {
       setError(err.message);

@@ -1,0 +1,10 @@
+{
+  "appId": "com.aulasis.app",
+  "appName": "Aulasis",
+  "webDir": "dist",
+  "server": {
+    "url": "https://aulasis.degutierrezh02.workers.dev",
+    "cleartext": false,
+    "androidScheme": "https"
+  }
+}

@@ -2,12 +2,12 @@ import { apiBaseUrl, apiFetch, jsonHeaders, parseJsonOrThrow, refreshSession, se
 import { getTenantSlug } from '../config/tenant';
 
 export const authService = {
-  async register(nombre, email, password) {
+  async register(nombre, email, password, telefono, etiqueta) {
     const response = await fetch(`${apiBaseUrl}/auth/register`, {
       method: 'POST',
       credentials: 'include',
       headers: { ...jsonHeaders(), 'x-tenant-slug': getTenantSlug() },
-      body: JSON.stringify({ nombre, email, password }),
+      body: JSON.stringify({ nombre, email, password, telefono, etiqueta: etiqueta || undefined }),
     });
     return parseJsonOrThrow(response);
   },

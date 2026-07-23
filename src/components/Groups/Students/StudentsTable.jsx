@@ -26,7 +26,15 @@ function StudentsTable({ students }) {
               <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-white/70 text-[11.5px] font-extrabold text-[#334155]">
                 {student.initials}
               </div>
-              <span className="truncate text-[14px] font-bold text-[#0F172A]">{student.name}</span>
+              <div className="min-w-0">
+                <div className="truncate text-[14px] font-bold text-[#0F172A]">{student.name}</div>
+                {student.telefonoEncargado && (
+                  <div className="flex items-center gap-1 truncate text-[11.5px] font-semibold text-[#94A3B8]">
+                    <i className="ph-bold ph-phone text-[11px]" />
+                    {student.telefonoEncargado}
+                  </div>
+                )}
+              </div>
             </div>
             <div
               className="text-center text-[15.5px] font-extrabold"

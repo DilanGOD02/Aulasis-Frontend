@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { rubricasService } from '../../services/rubricasService';
+import { useToast } from '../../context/ToastContext';
 
 const ESCALA_POR_DEFECTO = [
   { valor: 0, etiqueta: 'No responde' },
@@ -32,6 +33,7 @@ function aEstado(detalle) {
  * — en ambos casos el profesor revisa/corrige acá antes de guardar.
  */
 function RubricaDesignerModal({ itemId, itemNombre, onClose, onSaved }) {
+  const { showToast } = useToast();
   const [estado, setEstado] = useState(null); // null = cargando
   const [existia, setExistia] = useState(false);
   const [error, setError] = useState('');
@@ -146,6 +148,7 @@ function RubricaDesignerModal({ itemId, itemNombre, onClose, onSaved }) {
       };
       await rubricasService.guardar(itemId, payload);
       onSaved?.(true);
+      showToast('Rúbrica guardada');
       onClose();
     } catch (err) {
       setError(err.message);
@@ -160,6 +163,7 @@ function RubricaDesignerModal({ itemId, itemNombre, onClose, onSaved }) {
     try {
       await rubricasService.eliminar(itemId);
       onSaved?.(false);
+      showToast('Rúbrica eliminada');
       onClose();
     } catch (err) {
       setError(err.message);

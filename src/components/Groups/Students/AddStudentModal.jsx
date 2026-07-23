@@ -10,6 +10,7 @@ function AddStudentModal({ onClose, onSubmit }) {
   const [cedula, setCedula] = useState('');
   const [nombre, setNombre] = useState('');
   const [apellidos, setApellidos] = useState('');
+  const [telefonoEncargado, setTelefonoEncargado] = useState('');
   const [existing, setExisting] = useState(null);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -22,6 +23,7 @@ function AddStudentModal({ onClose, onSubmit }) {
         setExisting(result);
         setNombre(result.nombre ?? '');
         setApellidos(result.apellidos ?? '');
+        setTelefonoEncargado(result.telefonoEncargado ?? '');
       } else {
         setExisting(null);
       }
@@ -36,6 +38,7 @@ function AddStudentModal({ onClose, onSubmit }) {
       setExisting(null);
       setNombre('');
       setApellidos('');
+      setTelefonoEncargado('');
     }
   };
 
@@ -44,7 +47,12 @@ function AddStudentModal({ onClose, onSubmit }) {
     setError('');
     setIsSubmitting(true);
     try {
-      await onSubmit({ cedula: cedula.trim(), nombre, apellidos });
+      await onSubmit({
+        cedula: cedula.trim(),
+        nombre,
+        apellidos,
+        telefonoEncargado: telefonoEncargado.trim() || undefined,
+      });
       onClose();
     } catch (err) {
       setError(err.message);
@@ -104,6 +112,19 @@ function AddStudentModal({ onClose, onSubmit }) {
               disabled={!!existing}
               placeholder="Ej. Vargas Soto"
               className="w-full rounded-[11px] border border-[#E2E8F0] px-3.5 py-3 text-[14.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)] disabled:bg-[#F8FAFC] disabled:text-[#94A3B8]"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-[13px] font-bold text-[#475569]">
+              Celular del encargado <span className="font-semibold text-[#94A3B8]">(opcional)</span>
+            </label>
+            <input
+              type="tel"
+              value={telefonoEncargado}
+              onChange={(e) => setTelefonoEncargado(e.target.value)}
+              placeholder="Ej. 8888-8888"
+              className="w-full rounded-[11px] border border-[#E2E8F0] px-3.5 py-3 text-[14.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)]"
             />
           </div>
 

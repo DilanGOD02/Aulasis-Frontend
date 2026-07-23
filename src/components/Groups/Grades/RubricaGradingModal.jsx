@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { rubricasService } from '../../../services/rubricasService';
 import { exportRubricaPdf } from '../../../utils/exportRubrica';
+import { useToast } from '../../../context/ToastContext';
 
 /**
  * Se abre desde el iconito de un ítem con rúbrica en la grilla de Notas.
@@ -20,6 +21,7 @@ function RubricaGradingModal({
   onClose,
   onSaved,
 }) {
+  const { showToast } = useToast();
   const [rubrica, setRubrica] = useState(null); // null = cargando
   const [calificaciones, setCalificaciones] = useState({}); // { [indicadorId]: nivelValor }
   const [observacion, setObservacion] = useState('');
@@ -67,6 +69,7 @@ function RubricaGradingModal({
         observacion,
       });
       onSaved?.();
+      showToast('Evaluación guardada');
       onClose();
     } catch (err) {
       setError(err.message);

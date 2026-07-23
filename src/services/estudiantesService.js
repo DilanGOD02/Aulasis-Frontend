@@ -21,7 +21,7 @@ export const estudiantesService = {
     return parseJsonOrThrow(response);
   },
 
-  /** Importa una lista de estudiantes desde un PDF (nombre + cédula) y los matricula en el grupo. */
+  /** Importa una lista de estudiantes desde un PDF o Excel (.xlsx) (nombre + cédula) y los matricula en el grupo. */
   async importarLista(grupoId, file) {
     const formData = new FormData();
     formData.append('file', file);

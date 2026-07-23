@@ -31,7 +31,17 @@ function StudentsTab() {
       setImportResult(result);
       await reloadGroup();
     } catch (err) {
-      setImportError(err.message);
+      // Si el mensaje no parece una explicación pensada para el usuario (por
+      // ejemplo un error técnico que se escapó sin envolver en el backend),
+      // se muestra un mensaje genérico en vez del texto crudo del error.
+      const esMensajeTecnico = /cannot read|undefined|is not a function|unexpected token|failed to fetch/i.test(
+        err.message ?? '',
+      );
+      setImportError(
+        esMensajeTecnico
+          ? 'No se pudo importar el archivo — revisá que tenga el formato correcto (PDF o Excel con cédula y nombre) e intentá de nuevo.'
+          : err.message,
+      );
     } finally {
       setIsImporting(false);
     }
@@ -64,7 +74,7 @@ function StudentsTab() {
           <input
             ref={fileInputRef}
             type="file"
-            accept="application/pdf"
+            accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx"
             onChange={handleFileSelected}
             className="hidden"
           />
@@ -78,7 +88,7 @@ function StudentsTab() {
       )}
       {importResult && (
         <div className="mb-3 rounded-[12px] bg-[#ECFDF3] px-4 py-3 text-[13px] font-bold text-[#15803D]">
-          Se leyeron {importResult.total} filas del PDF: {importResult.nuevos} estudiantes nuevos,{' '}
+          Se leyeron {importResult.total} filas del archivo: {importResult.nuevos} estudiantes nuevos,{' '}
           {importResult.existentesAsociados} ya existían y se asociaron a este grupo,{' '}
           {importResult.yaEnElGrupo} ya estaban en el grupo
           {importResult.invalidos > 0 && `, ${importResult.invalidos} filas no se pudieron leer`}.

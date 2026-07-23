@@ -9,13 +9,15 @@ const TOLERANCIA_PESO = 0.5;
 // Así toEsquemaPayload sabe cuáles mandar como actualización y cuáles como creación nueva.
 let nextCategoryId = -1;
 let nextItemId = -1;
-const newCategory = () => ({ id: nextCategoryId--, name: 'Nueva categoría', weight: 0, items: [], puntajeDirecto: false });
+const newCategory = () => ({ id: nextCategoryId--, name: 'Nueva categoría', weight: 0, items: [] });
 const newItem = () => ({ id: nextItemId--, name: 'Nuevo ítem', weight: 0 });
 
+// Una categoría sin items se califica directo (el backend le crea un item
+// implícito) — no hace falta que el profesor elija un modo a mano, alcanza
+// con que agregue items o no.
 function categorySubtitle(category) {
   if (category.auto) return 'Calculada automáticamente';
-  if (category.puntajeDirecto) return 'Una sola evaluación · puntaje directo';
-  if (!category.items.length) return 'Sin items todavía';
+  if (!category.items.length) return 'Una sola evaluación · puntaje directo';
   return `${category.items.length} items · subdividido`;
 }
 
@@ -34,8 +36,8 @@ function itemsSumInfo(category) {
  *
  * El peso de cada item es su parte del TOTAL del esquema (no un % relativo a
  * su categoría) — los items de una categoría deben sumar el mismo peso que
- * esa categoría. Una categoría marcada "una sola evaluación" no se subdivide:
- * se califica directo, sin items (el backend ya soporta esto).
+ * esa categoría. Una categoría sin items se califica directo (el backend ya
+ * soporta esto), no hace falta marcarlo aparte.
  */
 function SchemaBuilderForm({
   initialCategories,
@@ -44,12 +46,7 @@ function SchemaBuilderForm({
   onTemplateNameChange,
   onSave,
 }) {
-  const [categories, setCategories] = useState(() =>
-    initialCategories.map((c) => ({
-      puntajeDirecto: !c.auto && (c.items?.length ?? 0) === 0,
-      ...c,
-    })),
-  );
+  const [categories, setCategories] = useState(() => initialCategories.map((c) => ({ ...c })));
   const [expanded, setExpanded] = useState(
     () => new Set(initialCategories.filter((c) => c.items.length).map((c) => c.id)),
   );
@@ -58,18 +55,18 @@ function SchemaBuilderForm({
   const total = categories.reduce((sum, c) => sum + Number(c.weight || 0), 0);
   const isComplete = total === 100;
 
+  // Categorías subdivididas cuyos items no suman el peso de la categoría —
+  // bloquea el guardado; el detalle exacto se ve fila por fila (Suma de items).
+  const categoriasConProblemas = categories
+    .filter((c) => !c.auto && c.items.length > 0)
+    .filter((c) => !itemsSumInfo(c).ok)
+    .map((c) => c.name);
+  const canSave = isComplete && categoriasConProblemas.length === 0;
+
   const updateCategory = (id, patch) =>
     setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
   const removeCategory = (id) => setCategories((prev) => prev.filter((c) => c.id !== id));
   const addCategory = () => setCategories((prev) => [...prev, newCategory()]);
-
-  const togglePuntajeDirecto = (id) => {
-    setCategories((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, puntajeDirecto: !c.puntajeDirecto, items: [] } : c)),
-    );
-    // Al desmarcar (pasa a "subdividir"), abrimos la lista de items de una vez.
-    setExpanded((prev) => new Set(prev).add(id));
-  };
 
   const toggleExpanded = (id) =>
     setExpanded((prev) => {
@@ -120,7 +117,7 @@ function SchemaBuilderForm({
           {categories.map((c, i) => {
             const isOpen = expanded.has(c.id);
             const color = c.auto ? '#CBD5E1' : DOT_COLORS[i % DOT_COLORS.length];
-            const itemsInfo = !c.auto && !c.puntajeDirecto ? itemsSumInfo(c) : null;
+            const itemsInfo = !c.auto ? itemsSumInfo(c) : null;
 
             return (
               <div key={c.id}>
@@ -161,8 +158,7 @@ function SchemaBuilderForm({
                     <button
                       type="button"
                       onClick={() => toggleExpanded(c.id)}
-                      disabled={c.puntajeDirecto}
-                      className="press shrink-0 text-[#94A3B8] disabled:opacity-30"
+                      className="press shrink-0 text-[#94A3B8]"
                       aria-label={isOpen ? 'Contraer' : 'Expandir'}
                     >
                       <i className={`ph-bold ${isOpen ? 'ph-caret-up' : 'ph-caret-down'} text-[15px]`} />
@@ -180,19 +176,7 @@ function SchemaBuilderForm({
                   )}
                 </div>
 
-                {!c.auto && (
-                  <label className="mt-1.5 flex items-center gap-2 pl-[44px] text-[12.5px] font-semibold text-[#64748B]">
-                    <input
-                      type="checkbox"
-                      checked={c.puntajeDirecto}
-                      onChange={() => togglePuntajeDirecto(c.id)}
-                      className="h-3.5 w-3.5 accent-[var(--brand)]"
-                    />
-                    Una sola evaluación (no hace falta agregar items — ej. Asistencia, Proyecto)
-                  </label>
-                )}
-
-                {!c.auto && !c.puntajeDirecto && isOpen && (
+                {!c.auto && isOpen && (
                   <div className="mt-2 flex flex-col gap-1.5 pl-[44px]">
                     {c.items.map((item) => (
                       <div
@@ -332,18 +316,22 @@ function SchemaBuilderForm({
 
           <div
             className="mt-4 flex items-center gap-2 rounded-[11px] px-3.5 py-2.5 text-[13px] font-bold"
-            style={{ background: isComplete ? '#F0FDF4' : '#FEF2F2', color: isComplete ? '#15803D' : '#DC2626' }}
+            style={{ background: canSave ? '#F0FDF4' : '#FEF2F2', color: canSave ? '#15803D' : '#DC2626' }}
           >
-            <i className={`ph-fill ${isComplete ? 'ph-check-circle' : 'ph-warning-circle'} text-[16px]`} />
-            {isComplete
+            <i className={`ph-fill ${canSave ? 'ph-check-circle' : 'ph-warning-circle'} text-[16px]`} />
+            {canSave
               ? 'El esquema está completo y listo para guardar.'
-              : `Ajustá los pesos: ${total > 100 ? `sobran ${total - 100}` : `faltan ${100 - total}`}%.`}
+              : !isComplete
+                ? `Ajustá los pesos de las categorías: ${total > 100 ? `sobran ${total - 100}` : `faltan ${100 - total}`}% para llegar a 100%.`
+                : `Revisá los items de ${categoriasConProblemas.join(', ')} — no suman el mismo peso que su categoría.`}
           </div>
 
           <button
             type="button"
-            onClick={() => onSave?.(categories, templateName)}
-            className="press mt-4 flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--brand)] py-3 text-[14.5px] font-extrabold text-white"
+            onClick={() => canSave && onSave?.(categories, templateName)}
+            disabled={!canSave}
+            title={!canSave ? 'Corregí los pesos antes de guardar' : undefined}
+            className="press mt-4 flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--brand)] py-3 text-[14.5px] font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             <i className="ph-fill ph-floppy-disk text-[17px]" />
             Guardar esquema

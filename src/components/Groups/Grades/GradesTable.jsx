@@ -15,6 +15,15 @@ function contributionPct(value, column) {
   return Math.round(pct * 10) / 10;
 }
 
+/** Nota fuera de rango (negativa o mayor al valor máximo del ítem) — se marca en la celda antes de guardar. */
+function gradeError(value, column) {
+  if (value == null || value === '') return null;
+  const n = Number(value);
+  if (n < 0) return 'No puede ser negativa';
+  if (column.valorMaximo && n > column.valorMaximo) return `Máximo ${column.valorMaximo}`;
+  return null;
+}
+
 /** Suma de lo que ya aportan los items de esta categoría — el % de la categoría obtenido hasta ahora. */
 function categoryContributionPct(student, column, colByKey) {
   const total = column.leafKeys.reduce((sum, k) => {
@@ -114,35 +123,53 @@ function GradesTable({ students, columns, onGradeChange, onGradeCommit, onOpenRu
                   </div>
                 </div>
               ) : (
-                <div key={col.key} className="border-r border-black px-1 py-1">
-                  <div className="flex items-center gap-0.5">
-                    <input
-                      type="text"
-                      value={student.grades[col.key] ?? ''}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        onGradeChange(student.id, col.key, raw === '' ? '' : Number(raw));
-                      }}
-                      onBlur={() => onGradeCommit?.(student.id, col.key, student.grades[col.key] ?? null)}
-                      className="w-full min-w-0 flex-1 rounded-lg border border-transparent bg-transparent py-1.5 text-center text-[14px] font-bold text-[#1E293B] outline-none focus:border-[var(--brand)] focus:bg-white"
-                    />
-                    {col.tieneRubrica && (
-                      <button
-                        type="button"
-                        onClick={() => onOpenRubrica?.(student.id, col.key)}
-                        title="Evaluar con rúbrica"
-                        className="press shrink-0 text-[var(--brand)]"
-                      >
-                        <i className="ph-fill ph-clipboard-text text-[15px]" />
-                      </button>
-                    )}
-                  </div>
-                  {contributionPct(student.grades[col.key], col) != null && (
-                    <div className="-mt-0.5 text-center text-[10.5px] font-bold text-[var(--brand)]">
-                      → {contributionPct(student.grades[col.key], col)}%
+                (() => {
+                  const value = student.grades[col.key];
+                  const error = gradeError(value, col);
+                  return (
+                    <div key={col.key} className="border-r border-black px-1 py-1">
+                      <div className="flex items-center gap-0.5">
+                        <input
+                          type="text"
+                          value={value ?? ''}
+                          title={error ?? undefined}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            onGradeChange(student.id, col.key, raw === '' ? '' : Number(raw));
+                          }}
+                          onBlur={() => {
+                            if (gradeError(student.grades[col.key], col)) return; // no se guarda hasta corregirla
+                            onGradeCommit?.(student.id, col.key, student.grades[col.key] ?? null);
+                          }}
+                          className={`w-full min-w-0 flex-1 rounded-lg border bg-transparent py-1.5 text-center text-[14px] font-bold outline-none focus:bg-white ${
+                            error
+                              ? 'border-[#DC2626] text-[#DC2626] focus:border-[#DC2626]'
+                              : 'border-transparent text-[#1E293B] focus:border-[var(--brand)]'
+                          }`}
+                        />
+                        {col.tieneRubrica && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenRubrica?.(student.id, col.key)}
+                            title="Evaluar con rúbrica"
+                            className="press shrink-0 text-[var(--brand)]"
+                          >
+                            <i className="ph-fill ph-clipboard-text text-[15px]" />
+                          </button>
+                        )}
+                      </div>
+                      {error ? (
+                        <div className="-mt-0.5 text-center text-[10.5px] font-bold text-[#DC2626]">{error}</div>
+                      ) : (
+                        contributionPct(value, col) != null && (
+                          <div className="-mt-0.5 text-center text-[10.5px] font-bold text-[var(--brand)]">
+                            → {contributionPct(value, col)}%
+                          </div>
+                        )
+                      )}
                     </div>
-                  )}
-                </div>
+                  );
+                })()
               ),
             )}
 

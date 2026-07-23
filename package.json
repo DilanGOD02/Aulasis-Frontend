@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/cli": "^8.4.2",
+    "@capacitor/core": "^8.4.2",
     "@hookform/resolvers": "^5.4.0",
     "date-fns": "^4.4.0",
     "exceljs": "^4.4.0",

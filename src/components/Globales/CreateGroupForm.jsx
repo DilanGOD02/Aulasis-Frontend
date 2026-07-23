@@ -4,6 +4,7 @@ import { esquemasService } from '../../services/esquemasService';
 import { gruposService } from '../../services/gruposService';
 import { periodosService } from '../../services/periodosService';
 import { mapGrupoDetail, mapTemplate } from '../../utils/mappers';
+import { useToast } from '../../context/ToastContext';
 
 const DAYS = [
   { key: 'L', label: 'Lunes', backend: 'lunes' },
@@ -94,6 +95,7 @@ function TimeField12h({ value, onChange }) {
  */
 function CreateGroupForm({ groupId }) {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const isEditMode = !!groupId;
 
   const [seccion, setSeccion] = useState('');
@@ -248,6 +250,7 @@ function CreateGroupForm({ groupId }) {
           });
         }
 
+        showToast('Grupo actualizado');
         navigate(`/grupos/${groupId}`);
       } else {
         const grupo = await gruposService.create({
@@ -269,6 +272,7 @@ function CreateGroupForm({ groupId }) {
             fechaFin: p.fechaFin,
           })),
         });
+        showToast('Grupo creado');
         navigate(`/grupos/${grupo.id}`);
       }
     } catch (err) {
