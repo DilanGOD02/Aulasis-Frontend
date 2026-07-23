@@ -32,7 +32,7 @@ function RiskStudentCard({ student }) {
         </div>
         <div className="mt-0.5 text-[13.5px] font-semibold text-[#64748B]">{student.reason}</div>
         <div className="mt-1 text-[12.5px] font-medium text-[#78716C]">
-          Promedio actual: <span className="font-extrabold text-[#1E293B]">{student.avg.toFixed(0)}</span>
+          Promedio actual: <span className="font-extrabold text-[#1E293B]">{student.avg != null ? student.avg.toFixed(0) : '—'}</span>
           {student.neededScore != null && (
             <>
               {' '}

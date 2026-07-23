@@ -9,7 +9,7 @@ const AVATAR_COLORS = [
 
 function RiskStudentRow({ student, index }) {
   const { bg, color } = AVATAR_COLORS[index % AVATAR_COLORS.length];
-  const need = Math.max(0, 70 - student.avg);
+  const need = student.avg != null ? Math.max(0, 70 - student.avg) : null;
 
   return (
     <div className="press flex items-center gap-3.5 border-t border-[#F4F6F9] py-2.5">
@@ -22,7 +22,8 @@ function RiskStudentRow({ student, index }) {
       <div className="min-w-0 flex-1">
         <div className="truncate text-[14.5px] font-bold text-[#0F172A]">{student.name}</div>
         <div className="text-[12.5px] font-semibold text-[#94A3B8]">
-          Promedio: {student.avg.toFixed(1)} · para 70 +{need.toFixed(1)}
+          Promedio: {student.avg != null ? student.avg.toFixed(1) : '—'}
+          {need != null && ` · para 70 +${need.toFixed(1)}`}
         </div>
       </div>
       <span className="text-[13px] font-bold text-[var(--brand)]">Ver</span>
