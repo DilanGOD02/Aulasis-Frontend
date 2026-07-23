@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { gruposService } from '../../services/gruposService';
+import { useConfirm } from '../../context/ConfirmContext';
+import { useToast } from '../../context/ToastContext';
 
 /**
  * Page header for every group-scoped screen: a gradient identity banner
@@ -8,20 +10,43 @@ import { gruposService } from '../../services/gruposService';
  * `color`, replacing the plain white PageHeader used elsewhere in the app.
  * Also holds the grupo settings menu (editar/eliminar).
  */
-function GroupPageHeader({ group }) {
+function GroupPageHeader({ group, onRecalculado }) {
   const navigate = useNavigate();
+  const confirm = useConfirm();
+  const { showToast } = useToast();
   const [showMenu, setShowMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRecalculando, setIsRecalculando] = useState(false);
+
+  const handleRecalcular = async () => {
+    setShowMenu(false);
+    setIsRecalculando(true);
+    try {
+      await gruposService.recalcularGrupo(group.id);
+      await onRecalculado?.();
+      showToast('Promedios y asistencia actualizados', 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setIsRecalculando(false);
+    }
+  };
 
   const handleEliminar = async () => {
     setShowMenu(false);
-    if (!window.confirm(`¿Eliminar el grupo "${group.name}"? Esta acción no se puede deshacer.`)) return;
+    const ok = await confirm({
+      title: 'Eliminar grupo',
+      message: `¿Eliminar el grupo "${group.name}"? Esta acción no se puede deshacer.`,
+      confirmLabel: 'Eliminar',
+      danger: true,
+    });
+    if (!ok) return;
     setIsDeleting(true);
     try {
       await gruposService.remove(group.id);
       navigate('/inicio');
     } catch (err) {
-      window.alert(err.message);
+      showToast(err.message, 'error');
       setIsDeleting(false);
     }
   };
@@ -53,7 +78,7 @@ function GroupPageHeader({ group }) {
           <button
             type="button"
             onClick={() => setShowMenu((v) => !v)}
-            disabled={isDeleting}
+            disabled={isDeleting || isRecalculando}
             className="press flex h-10 w-10 items-center justify-center rounded-[12px] bg-white/20 disabled:opacity-60"
             aria-label="Opciones del grupo"
           >
@@ -61,6 +86,15 @@ function GroupPageHeader({ group }) {
           </button>
           {showMenu && (
             <div className="absolute right-0 z-10 mt-1.5 w-44 rounded-[12px] border border-[#EEF1F6] bg-white p-1.5 text-left shadow-[0_20px_44px_-16px_rgba(16,24,40,0.34)]">
+              <button
+                type="button"
+                onClick={handleRecalcular}
+                disabled={isRecalculando}
+                className="press flex w-full items-center gap-2 rounded-[9px] px-3 py-2.5 text-[13.5px] font-bold text-[#334155] disabled:opacity-60"
+              >
+                <i className={`ph-bold ph-arrows-clockwise text-[15px] ${isRecalculando ? 'animate-spin' : ''}`} />
+                Actualizar cálculos
+              </button>
               <button
                 type="button"
                 onClick={() => {

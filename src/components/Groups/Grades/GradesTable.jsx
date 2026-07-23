@@ -1,6 +1,6 @@
 import { groupColumnsByCategory } from './categories';
 
-const DOT_BY_STATUS = { ok: '#16A34A', limit: '#D97706', risk: '#DC2626' };
+const DOT_BY_STATUS = { ok: '#16A34A', limit: '#D97706', risk: '#DC2626', incomplete: '#94A3B8' };
 const HEADER_DARK = '#1E293B';
 
 function totalFor(student, column) {
@@ -92,9 +92,11 @@ function GradesTable({ students, columns, onGradeChange, onGradeCommit, onOpenRu
           {columns.map((col, idx) => (
             <div
               key={col.key}
-              className="border-r border-t border-black py-1.5 text-center text-[10px] text-white"
+              title={col.auto ? 'Se calcula sola con la asistencia — se puede escribir un valor a mano si querés cambiarla' : undefined}
+              className="flex items-center justify-center gap-1 border-r border-t border-black py-1.5 text-center text-[10px] text-white"
               style={{ gridColumn: `${idx + 2}`, gridRow: '2', background: col.color }}
             >
+              {col.auto && <i className="ph-fill ph-magic-wand text-[10px]" />}
               {col.header}
             </div>
           ))}
@@ -177,7 +179,7 @@ function GradesTable({ students, columns, onGradeChange, onGradeCommit, onOpenRu
               className="border-r border-black text-center text-[15.5px] font-extrabold"
               style={{ color: student.status.key === 'ok' ? '#0F172A' : student.status.color }}
             >
-              {student.avg != null ? student.avg.toFixed(1) : '—'}
+              {student.avg != null && student.status.key !== 'incomplete' ? student.avg.toFixed(1) : '—'}
             </div>
             <div className="px-2 text-center">
               <span

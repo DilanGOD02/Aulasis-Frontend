@@ -1,7 +1,7 @@
 import { apiFetch, jsonHeaders, parseJsonOrThrow } from './apiClient';
 
 export const asistenciasService = {
-  /** Guarda bulk: { grupoId, fecha, entradas: [{grupoEstudianteId, estado}] }. */
+  /** Guarda bulk: { grupoId, fecha, entradas: [{grupoEstudianteId, estado, justificada, horaLlegada}] }. */
   async guardar(payload) {
     const response = await apiFetch('/asistencias', {
       method: 'PUT',

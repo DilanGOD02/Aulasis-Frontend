@@ -99,7 +99,7 @@ function Navbar({ unseenRiskCount = 0 }) {
             )}
           </button>
 
-          <div className="relative hidden sm:block" ref={menuRef}>
+          <div className="relative" ref={menuRef}>
             <button
               type="button"
               onClick={() => setMenuOpen((v) => !v)}

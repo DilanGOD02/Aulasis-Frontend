@@ -1,4 +1,4 @@
-const DOT_BY_STATUS = { ok: '#16A34A', limit: '#D97706', risk: '#DC2626' };
+const DOT_BY_STATUS = { ok: '#16A34A', limit: '#D97706', risk: '#DC2626', incomplete: '#94A3B8' };
 
 /**
  * Tabla de "Año completo": una columna por periodo (la nota YA obtenida ahí)
@@ -51,7 +51,7 @@ function GradesGlobalTable({ students, periodos }) {
             })}
 
             <div className="text-center text-[15.5px] font-extrabold text-[var(--brand)]">
-              {student.avg != null ? student.avg.toFixed(1) : '—'}
+              {student.avg != null && student.status.key !== 'incomplete' ? student.avg.toFixed(1) : '—'}
             </div>
             <div className="px-2 text-center">
               <span

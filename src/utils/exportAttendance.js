@@ -5,8 +5,18 @@ import { ATTENDANCE_STATUSES, countByStatus } from '../components/Groups/Attenda
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const DARK = '1E293B';
-const ESTADO_LABEL = { presente: 'Presente', ausente: 'Ausente', tardia: 'Tardía', justificada: 'Justificada' };
+const ESTADO_LABEL = { presente: 'Presente', ausente: 'Ausente', tardia: 'Tardía' };
 const STATUS_META = Object.fromEntries(ATTENDANCE_STATUSES.map((s) => [s.key, { ...s, label: ESTADO_LABEL[s.key] }]));
+
+/** Label + metadata visual de una entrada {estado, justificada, horaLlegada}, con sufijo si aplica. */
+function metaForEntry(entry) {
+  const meta = STATUS_META[entry?.estado];
+  if (!meta) return null;
+  let label = meta.label;
+  if (entry.justificada) label += ' (justif.)';
+  else if (entry.estado === 'tardia' && entry.horaLlegada) label += ` (${entry.horaLlegada})`;
+  return { ...meta, label };
+}
 
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -73,7 +83,7 @@ export function exportAttendancePdf(group, fecha, students, statusById) {
   const summaryY = 28;
   doc.text(summaryLine(students, counts), 10, summaryY);
 
-  const body = students.map((s, idx) => [idx + 1, s.name, STATUS_META[statusById[s.id]]?.label ?? '—']);
+  const body = students.map((s, idx) => [idx + 1, s.name, metaForEntry(statusById[s.id])?.label ?? '—']);
   const estadoColIndex = 2;
 
   autoTable(doc, {
@@ -86,7 +96,7 @@ export function exportAttendancePdf(group, fecha, students, statusById) {
     columnStyles: { 0: { halign: 'center', cellWidth: 12 }, 1: { halign: 'left', cellWidth: 90 }, 2: { halign: 'center' } },
     didParseCell: (data) => {
       if (data.section !== 'body' || data.column.index !== estadoColIndex) return;
-      const status = STATUS_META[statusById[students[data.row.index].id]];
+      const status = metaForEntry(statusById[students[data.row.index].id]);
       if (!status) return;
       data.cell.styles.fillColor = hexToRgb(status.bg);
       data.cell.styles.textColor = hexToRgb(status.color);
@@ -140,7 +150,7 @@ export async function exportAttendanceExcel(group, fecha, students, statusById) 
     ws.getCell(r, 1).alignment = { horizontal: 'center' };
     ws.getCell(r, 2).value = s.name;
 
-    const status = STATUS_META[statusById[s.id]];
+    const status = metaForEntry(statusById[s.id]);
     const estadoCell = ws.getCell(r, 3);
     estadoCell.value = status?.label ?? '—';
     estadoCell.alignment = { horizontal: 'center' };

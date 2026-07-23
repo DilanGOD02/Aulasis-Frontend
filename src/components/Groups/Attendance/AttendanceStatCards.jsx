@@ -1,5 +1,12 @@
 import { ATTENDANCE_STATUSES } from './attendanceStatus';
 
+const JUSTIFICADAS_TILE = {
+  label: 'Justificadas',
+  color: '#475569',
+  bg: '#F4F6F9',
+  border: '#E8ECF2',
+};
+
 /** The 4 Presentes/Ausentes/Tardías/Justificadas count tiles. */
 function AttendanceStatCards({ counts }) {
   return (
@@ -18,6 +25,17 @@ function AttendanceStatCards({ counts }) {
           </div>
         </div>
       ))}
+      <div
+        className="min-w-[90px] flex-1 rounded-[14px] border px-4 py-3"
+        style={{ background: JUSTIFICADAS_TILE.bg, borderColor: JUSTIFICADAS_TILE.border }}
+      >
+        <div className="text-[24px] font-extrabold leading-none" style={{ color: JUSTIFICADAS_TILE.color }}>
+          {counts.justificadas}
+        </div>
+        <div className="mt-1 text-[12px] font-bold" style={{ color: JUSTIFICADAS_TILE.color }}>
+          {JUSTIFICADAS_TILE.label}
+        </div>
+      </div>
     </div>
   );
 }

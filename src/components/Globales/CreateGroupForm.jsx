@@ -101,6 +101,7 @@ function CreateGroupForm({ groupId }) {
   const [seccion, setSeccion] = useState('');
   const [materia, setMateria] = useState('');
   const [anioLectivo, setAnioLectivo] = useState(new Date().getFullYear());
+  const [minutosPorLeccion, setMinutosPorLeccion] = useState(40);
   const [schedule, setSchedule] = useState(emptySchedule);
   const [color, setColor] = useState(COLORS[0]);
   const [templates, setTemplates] = useState([]);
@@ -146,6 +147,7 @@ function CreateGroupForm({ groupId }) {
         setSeccion(grupo.seccion ?? '');
         setMateria(grupo.materia ?? '');
         setAnioLectivo(grupo.anioLectivo ?? new Date().getFullYear());
+        setMinutosPorLeccion(grupo.minutosPorLeccion ?? 40);
         setColor(grupo.color ?? COLORS[0]);
 
         const nextSchedule = emptySchedule();
@@ -226,6 +228,7 @@ function CreateGroupForm({ groupId }) {
           materia,
           color,
           anioLectivo: Number(anioLectivo),
+          minutosPorLeccion: Number(minutosPorLeccion),
           horarios,
         });
 
@@ -258,6 +261,7 @@ function CreateGroupForm({ groupId }) {
           materia,
           color,
           anioLectivo: Number(anioLectivo),
+          minutosPorLeccion: Number(minutosPorLeccion),
           esquemaOrigenId: templateId,
           horarios,
           periodos: seleccionados.map(([periodoLectivoId, fechas]) => ({
@@ -467,6 +471,19 @@ function CreateGroupForm({ groupId }) {
         <p className="mb-2.5 text-[12px] font-medium text-[#94A3B8]">
           Activá los días y ajustá la hora exacta (a.m./p.m.) de inicio y fin.
         </p>
+
+        <div className="mb-3.5 flex max-w-[220px] items-center gap-2.5 rounded-[12px] border border-[#E2E8F0] px-3.5 py-2.5">
+          <i className="ph-bold ph-clock-countdown shrink-0 text-[16px] text-[var(--brand)]" />
+          <label className="flex-1 text-[12.5px] font-bold text-[#475569]">Minutos por lección</label>
+          <input
+            type="number"
+            min="1"
+            value={minutosPorLeccion}
+            onChange={(e) => setMinutosPorLeccion(e.target.value)}
+            title="Para el cálculo oficial de asistencia del MEP — un bloque de 7:00 a 8:20 con lecciones de 40 min son 2 lecciones"
+            className="w-14 rounded-lg border border-transparent bg-[#F8FAFC] px-2 py-1 text-center text-[13.5px] font-extrabold text-[#1E293B] outline-none focus:border-[var(--brand)]"
+          />
+        </div>
         <div className="mb-3 flex gap-2">
           {DAYS.map((d) => (
             <button

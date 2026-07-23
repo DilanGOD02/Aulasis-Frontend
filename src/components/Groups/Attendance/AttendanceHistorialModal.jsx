@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { asistenciasService } from '../../../services/asistenciasService';
 import { ATTENDANCE_STATUSES } from './attendanceStatus';
+import { useConfirm } from '../../../context/ConfirmContext';
 
 const STATUS_BY_KEY = Object.fromEntries(ATTENDANCE_STATUSES.map((s) => [s.key, s]));
 
@@ -11,7 +12,8 @@ const STATUS_BY_KEY = Object.fromEntries(ATTENDANCE_STATUSES.map((s) => [s.key, 
  * "Eliminar" borra toda la asistencia de esa fecha. `soloLectura` (vista Año
  * completo) oculta ambas acciones.
  */
-function AttendanceHistorialModal({ groupId, periodoId, soloLectura = false, onClose, onEditarFecha }) {
+function AttendanceHistorialModal({ groupId, periodoId, soloLectura = false, onClose, onEditarFecha, onChanged }) {
+  const confirm = useConfirm();
   const [historial, setHistorial] = useState(null);
   const [error, setError] = useState('');
   const [expandedFecha, setExpandedFecha] = useState(null);
@@ -25,11 +27,18 @@ function AttendanceHistorialModal({ groupId, periodoId, soloLectura = false, onC
   }, [groupId, periodoId]);
 
   const handleEliminar = async (fecha) => {
-    if (!window.confirm(`¿Eliminar toda la asistencia del ${fecha}? Esta acción no se puede deshacer.`)) return;
+    const ok = await confirm({
+      title: 'Eliminar asistencia',
+      message: `¿Eliminar toda la asistencia del ${fecha}? Esta acción no se puede deshacer.`,
+      confirmLabel: 'Eliminar',
+      danger: true,
+    });
+    if (!ok) return;
     setDeletingFecha(fecha);
     try {
       await asistenciasService.eliminarFecha(groupId, fecha);
       setHistorial((prev) => prev.filter((d) => d.fecha !== fecha));
+      await onChanged?.();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -132,6 +141,8 @@ function AttendanceHistorialModal({ groupId, periodoId, soloLectura = false, onC
                             style={{ background: meta.bg, color: meta.color }}
                           >
                             {meta.label}
+                            {r.justificada && ' · justificada'}
+                            {r.estado === 'tardia' && !r.justificada && r.horaLlegada && ` · llegó ${r.horaLlegada}`}
                           </span>
                         </div>
                       );

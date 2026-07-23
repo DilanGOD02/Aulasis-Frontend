@@ -68,6 +68,14 @@ function SchemaBuilderForm({
   const removeCategory = (id) => setCategories((prev) => prev.filter((c) => c.id !== id));
   const addCategory = () => setCategories((prev) => [...prev, newCategory()]);
 
+  // Solo una categoría puede ser "asistencia automática" — al marcar una se
+  // desmarca cualquier otra, y se le vacían los items (su nota no sale de
+  // items, sale de lo que se pasa en el tab de Asistencia).
+  const toggleAuto = (id) =>
+    setCategories((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, auto: !c.auto, items: [] } : { ...c, auto: false })),
+    );
+
   const toggleExpanded = (id) =>
     setExpanded((prev) => {
       const next = new Set(prev);
@@ -126,16 +134,20 @@ function SchemaBuilderForm({
                   <span className="h-8 w-2 shrink-0 rounded-[5px]" style={{ background: color }} />
 
                   <div className="min-w-0 flex-1">
-                    {c.auto ? (
-                      <div className="px-1.5 py-1 text-[15px] font-bold italic text-[#94A3B8]">{c.name}</div>
-                    ) : (
-                      <input
-                        value={c.name}
-                        onChange={(e) => updateCategory(c.id, { name: e.target.value })}
-                        className="w-full rounded-lg border border-transparent bg-transparent px-1.5 py-1 text-[15px] font-bold text-[#1E293B] outline-none focus:border-[#E2E8F0] focus:bg-[#FAFBFD]"
-                      />
-                    )}
+                    <input
+                      value={c.name}
+                      onChange={(e) => updateCategory(c.id, { name: e.target.value })}
+                      className="w-full rounded-lg border border-transparent bg-transparent px-1.5 py-1 text-[15px] font-bold text-[#1E293B] outline-none focus:border-[#E2E8F0] focus:bg-[#FAFBFD]"
+                    />
                     <div className="px-1.5 text-[12px] font-semibold text-[#94A3B8]">{categorySubtitle(c)}</div>
+                    <button
+                      type="button"
+                      onClick={() => toggleAuto(c.id)}
+                      className="press ml-1.5 mt-0.5 flex items-center gap-1.5 py-0.5 text-[11.5px] font-bold text-[var(--brand)]"
+                    >
+                      <i className={`ph-bold ${c.auto ? 'ph-check-square' : 'ph-square'} text-[13px]`} />
+                      Asistencia automática (según lo pasado en el tab Asistencia)
+                    </button>
                   </div>
 
                   <div
@@ -164,16 +176,14 @@ function SchemaBuilderForm({
                       <i className={`ph-bold ${isOpen ? 'ph-caret-up' : 'ph-caret-down'} text-[15px]`} />
                     </button>
                   )}
-                  {!c.auto && (
-                    <button
-                      type="button"
-                      onClick={() => removeCategory(c.id)}
-                      className="press shrink-0 text-[#CBD5E1]"
-                      aria-label="Eliminar categoría"
-                    >
-                      <i className="ph ph-trash text-[17px]" />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeCategory(c.id)}
+                    className="press shrink-0 text-[#CBD5E1]"
+                    aria-label="Eliminar categoría"
+                  >
+                    <i className="ph ph-trash text-[17px]" />
+                  </button>
                 </div>
 
                 {!c.auto && isOpen && (

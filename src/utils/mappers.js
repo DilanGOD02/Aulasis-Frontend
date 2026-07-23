@@ -75,6 +75,7 @@ export function mapGrupoDetail(g) {
     color: g.color ?? '#6366F1',
     esquemaEvaluacionId: g.esquemaEvaluacionId,
     anioLectivo: g.anioLectivo,
+    minutosPorLeccion: g.minutosPorLeccion ?? 40,
     periodos: g.periodos ?? [],
     periodoActualId: g.periodoActualId ?? null,
     modo: g.modo ?? 'periodo',
@@ -97,6 +98,7 @@ export function mapEsquemaDetail(e) {
   return {
     id: e.id,
     name: e.nombre,
+    esOficial: !!e.esOficial,
     categories: (e.categorias ?? []).map(mapEsquemaCategoria),
   };
 }
@@ -108,6 +110,7 @@ export function mapTemplate(t) {
     badge: t.badge,
     description: t.descripcion,
     usageCount: t.usageCount,
+    esOficial: !!t.esOficial,
     categories: (t.categorias ?? []).map((c) => ({
       id: c.id,
       name: c.nombre,

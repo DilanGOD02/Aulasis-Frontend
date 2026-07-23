@@ -1,11 +1,22 @@
 import { useRef, useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { QuickActionTiles, StudentsTable, AddStudentModal } from '../../../components/Groups/Students';
+import {
+  StudentsTable,
+  AddStudentModal,
+  EditStudentModal,
+  TransferStudentModal,
+} from '../../../components/Groups/Students';
 import { estudiantesService } from '../../../services/estudiantesService';
+import { useToast } from '../../../context/ToastContext';
+import { useConfirm } from '../../../context/ConfirmContext';
 
 function StudentsTab() {
-  const { group, reloadGroup } = useOutletContext();
+  const { group, groupsList, reloadGroup } = useOutletContext();
+  const { showToast } = useToast();
+  const confirm = useConfirm();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editando, setEditando] = useState(null); // student | null
+  const [trasladando, setTrasladando] = useState(null); // student | null
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const [importError, setImportError] = useState('');
@@ -14,6 +25,35 @@ function StudentsTab() {
   const handleAddStudent = async (payload) => {
     await estudiantesService.matricular(group.id, payload);
     await reloadGroup();
+  };
+
+  const handleEditar = async (payload) => {
+    await estudiantesService.editar(group.id, editando.id, payload);
+    await reloadGroup();
+    showToast('Estudiante actualizado', 'success');
+  };
+
+  const handleTrasladar = async (grupoDestinoId) => {
+    await estudiantesService.trasladar(group.id, trasladando.id, grupoDestinoId);
+    await reloadGroup();
+    showToast('Estudiante trasladado', 'success');
+  };
+
+  const handleEliminar = async (student) => {
+    const ok = await confirm({
+      title: 'Quitar del grupo',
+      message: `¿Quitar a ${student.name} de este grupo? Su historial de notas y asistencia se conserva.`,
+      confirmLabel: 'Quitar',
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await estudiantesService.eliminar(group.id, student.id);
+      await reloadGroup();
+      showToast('Estudiante eliminado del grupo', 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   };
 
   const handleImportarClick = () => fileInputRef.current?.click();
@@ -49,8 +89,6 @@ function StudentsTab() {
 
   return (
     <>
-      <QuickActionTiles />
-
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="text-[17px] font-extrabold text-[#0F172A]">Estudiantes</div>
         <div className="flex items-center gap-4">
@@ -95,9 +133,26 @@ function StudentsTab() {
         </div>
       )}
 
-      <StudentsTable students={group.students} />
+      <StudentsTable
+        students={group.students}
+        onEditar={setEditando}
+        onTrasladar={setTrasladando}
+        onEliminar={handleEliminar}
+      />
 
       {showAddModal && <AddStudentModal onClose={() => setShowAddModal(false)} onSubmit={handleAddStudent} />}
+      {editando && (
+        <EditStudentModal student={editando} onClose={() => setEditando(null)} onSubmit={handleEditar} />
+      )}
+      {trasladando && (
+        <TransferStudentModal
+          student={trasladando}
+          currentGroupId={group.id}
+          groups={groupsList ?? []}
+          onClose={() => setTrasladando(null)}
+          onSubmit={handleTrasladar}
+        />
+      )}
     </>
   );
 }

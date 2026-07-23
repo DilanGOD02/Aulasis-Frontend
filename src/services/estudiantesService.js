@@ -32,4 +32,32 @@ export const estudiantesService = {
     });
     return parseJsonOrThrow(response);
   },
+
+  /** Saca al estudiante de este grupo (baja lógica, no borra su historial). */
+  async eliminar(grupoId, matriculaId) {
+    const response = await apiFetch(`/grupos/${grupoId}/estudiantes/${matriculaId}`, {
+      method: 'DELETE',
+    });
+    return parseJsonOrThrow(response);
+  },
+
+  /** Edita los datos del estudiante (nombre/apellidos/cédula/teléfono del encargado). */
+  async editar(grupoId, matriculaId, payload) {
+    const response = await apiFetch(`/grupos/${grupoId}/estudiantes/${matriculaId}`, {
+      method: 'PATCH',
+      headers: jsonHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return parseJsonOrThrow(response);
+  },
+
+  /** Traslada la matrícula del estudiante a otro grupo. */
+  async trasladar(grupoId, matriculaId, grupoDestinoId) {
+    const response = await apiFetch(`/grupos/${grupoId}/estudiantes/${matriculaId}/trasladar`, {
+      method: 'POST',
+      headers: jsonHeaders(),
+      body: JSON.stringify({ grupoDestinoId }),
+    });
+    return parseJsonOrThrow(response);
+  },
 };

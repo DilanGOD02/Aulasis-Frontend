@@ -34,4 +34,16 @@ export const gruposService = {
     const response = await apiFetch(`/grupos/${id}`, { method: 'DELETE' });
     return parseJsonOrThrow(response);
   },
+
+  /** Refresca los promedios/estados cacheados de todos los grupos — no toca notas ni asistencia reales. */
+  async recalcularTodo() {
+    const response = await apiFetch('/grupos/recalcular-todo', { method: 'POST' });
+    return parseJsonOrThrow(response);
+  },
+
+  /** Igual que recalcularTodo pero para un solo grupo — más rápido, se usa desde la vista del grupo. */
+  async recalcularGrupo(id) {
+    const response = await apiFetch(`/grupos/${id}/recalcular`, { method: 'POST' });
+    return parseJsonOrThrow(response);
+  },
 };

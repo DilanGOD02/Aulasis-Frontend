@@ -2,14 +2,12 @@ const STATUS_STYLE = {
   presente: { icon: 'ph-check', bg: '#F0FDF4', color: '#16A34A', label: 'presente' },
   ausente: { icon: 'ph-x', bg: '#FEF2F2', color: '#DC2626', label: 'ausente' },
   tardia: { icon: 'ph-clock', bg: '#FFF7ED', color: '#C2410C', label: 'tardía' },
-  justificada: { icon: 'ph-note', bg: '#F4F6F9', color: '#475569', label: 'justif.' },
 };
 
 const LEGEND = [
   { status: 'presente', label: 'presente' },
   { status: 'ausente', label: 'ausente' },
   { status: 'tardia', label: 'tardía' },
-  { status: 'justificada', label: 'justif.' },
 ];
 
 const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -22,6 +20,7 @@ function dateLabelOf(fecha) {
 /** "Historial de asistencia" — asistencias reales de esta matrícula, más recientes primero. */
 function AttendanceHistoryCard({ historial }) {
   const counts = historial.reduce((acc, h) => ({ ...acc, [h.estado]: (acc[h.estado] ?? 0) + 1 }), {});
+  const justificadas = historial.filter((h) => h.justificada).length;
 
   return (
     <div className="rounded-2xl border border-[#EEF1F6] bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)] sm:p-6">
@@ -34,6 +33,10 @@ function AttendanceHistoryCard({ historial }) {
               {counts[status] ?? 0} {label}
             </span>
           ))}
+          <span className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-[#475569]" />
+            {justificadas} justif.
+          </span>
         </div>
       </div>
 
@@ -52,8 +55,10 @@ function AttendanceHistoryCard({ historial }) {
                 <div className="flex h-8 w-8 items-center justify-center rounded-full text-white" style={{ background: color }}>
                   <i className={`ph-bold ${icon} text-[16px]`} />
                 </div>
-                <div className="text-[12px] font-extrabold" style={{ color }}>
+                <div className="text-center text-[12px] font-extrabold" style={{ color }}>
                   {label}
+                  {entry.justificada && ' (justif.)'}
+                  {entry.estado === 'tardia' && !entry.justificada && entry.horaLlegada && ` (${entry.horaLlegada})`}
                 </div>
                 <div className="text-[11px] font-semibold text-[#94A3B8]">{dateLabelOf(entry.fecha)}</div>
               </div>

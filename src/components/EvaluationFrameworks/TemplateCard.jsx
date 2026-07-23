@@ -1,16 +1,24 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { esquemasService } from '../../services/esquemasService';
+import { useConfirm } from '../../context/ConfirmContext';
 
 /** One reusable evaluation template card: its category chips, usage count, and edit/delete shortcuts. */
 function TemplateCard({ template, onDeleted }) {
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const [error, setError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const total = template.categories.reduce((sum, c) => sum + c.weight, 0);
 
   const handleDelete = async () => {
-    if (!window.confirm(`¿Eliminar la plantilla "${template.name}"? Esta acción no se puede deshacer.`)) return;
+    const ok = await confirm({
+      title: 'Eliminar plantilla',
+      message: `¿Eliminar la plantilla "${template.name}"? Esta acción no se puede deshacer.`,
+      confirmLabel: 'Eliminar',
+      danger: true,
+    });
+    if (!ok) return;
     setError('');
     setIsDeleting(true);
     try {
@@ -32,6 +40,12 @@ function TemplateCard({ template, onDeleted }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="truncate text-[15.5px] font-extrabold text-[#0F172A]">{template.name}</span>
+            {template.esOficial && (
+              <span className="flex items-center gap-1 whitespace-nowrap rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[10.5px] font-extrabold text-[var(--brand-dark)]">
+                <i className="ph-fill ph-seal-check text-[11px]" />
+                Oficial
+              </span>
+            )}
             {template.badge && (
               <span className="whitespace-nowrap rounded-full bg-[#ECFDF3] px-2 py-0.5 text-[10.5px] font-extrabold text-[#15803D]">
                 {template.badge}
@@ -64,22 +78,24 @@ function TemplateCard({ template, onDeleted }) {
           Total: <span className="font-extrabold text-[var(--brand)]">{total}%</span>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={isDeleting}
-            title={template.usageCount > 0 ? 'En uso por grupos existentes' : 'Eliminar plantilla'}
-            className="press flex h-9 w-9 items-center justify-center rounded-[10px] border border-[#E8ECF2] bg-white text-[#DC2626] disabled:opacity-60"
-          >
-            <i className="ph ph-trash text-[15px]" />
-          </button>
+          {!template.esOficial && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              title={template.usageCount > 0 ? 'En uso por grupos existentes' : 'Eliminar plantilla'}
+              className="press flex h-9 w-9 items-center justify-center rounded-[10px] border border-[#E8ECF2] bg-white text-[#DC2626] disabled:opacity-60"
+            >
+              <i className="ph ph-trash text-[15px]" />
+            </button>
+          )}
           <button
             type="button"
             onClick={() => navigate(`/esquemas/${template.id}`)}
             className="press flex items-center gap-1.5 rounded-[10px] border border-[#E8ECF2] bg-white px-3.5 py-2 text-[13px] font-bold text-[#334155]"
           >
-            <i className="ph ph-pencil-simple text-[15px]" />
-            Editar
+            <i className={`ph ${template.esOficial ? 'ph-eye' : 'ph-pencil-simple'} text-[15px]`} />
+            {template.esOficial ? 'Ver' : 'Editar'}
           </button>
         </div>
       </div>

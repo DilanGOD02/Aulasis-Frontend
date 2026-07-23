@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { rubricasService } from '../../services/rubricasService';
 import { useToast } from '../../context/ToastContext';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const ESCALA_POR_DEFECTO = [
   { valor: 0, etiqueta: 'No responde' },
@@ -34,6 +35,7 @@ function aEstado(detalle) {
  */
 function RubricaDesignerModal({ itemId, itemNombre, onClose, onSaved }) {
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const [estado, setEstado] = useState(null); // null = cargando
   const [existia, setExistia] = useState(false);
   const [error, setError] = useState('');
@@ -158,7 +160,13 @@ function RubricaDesignerModal({ itemId, itemNombre, onClose, onSaved }) {
   };
 
   const handleEliminar = async () => {
-    if (!window.confirm('¿Eliminar esta rúbrica? Las calificaciones ya hechas con ella se pierden.')) return;
+    const ok = await confirm({
+      title: 'Eliminar rúbrica',
+      message: '¿Eliminar esta rúbrica? Las calificaciones ya hechas con ella se pierden.',
+      confirmLabel: 'Eliminar',
+      danger: true,
+    });
+    if (!ok) return;
     setIsSaving(true);
     try {
       await rubricasService.eliminar(itemId);

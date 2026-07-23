@@ -64,6 +64,40 @@ function TemplateBuilderPage() {
     }
   };
 
+  if (!isNew && existing?.esOficial) {
+    return (
+      <>
+        <PageHeader title={existing.name} crumb="Esquemas de evaluación · Plantilla oficial" showBack />
+        <div className="flex-1 px-4 py-5 sm:px-6 sm:py-6">
+          <div className="mb-4 flex items-center gap-2 rounded-[12px] bg-[#EEF2FF] px-4 py-3 text-[13px] font-bold text-[var(--brand-dark)]">
+            <i className="ph-fill ph-lock-simple text-[16px]" />
+            Plantilla oficial de referencia — solo se puede ver, no editar ni borrar.
+          </div>
+          <div className="flex flex-col gap-2.5">
+            {existing.categories.map((c) => (
+              <div
+                key={c.id}
+                className="flex items-center justify-between rounded-[14px] border border-[#EEF1F6] bg-white p-3.5"
+              >
+                <div>
+                  <div className="text-[14.5px] font-bold text-[#1E293B]">{c.name}</div>
+                  {c.auto ? (
+                    <div className="text-[12px] font-semibold text-[#94A3B8]">Calculada automáticamente</div>
+                  ) : (
+                    <div className="text-[12px] font-semibold text-[#94A3B8]">
+                      {c.items?.length ? `${c.items.length} items` : 'Una sola evaluación'}
+                    </div>
+                  )}
+                </div>
+                <div className="text-[16px] font-extrabold text-[var(--brand)]">{c.weight}%</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <PageHeader title="Constructor de evaluación" crumb="Esquemas de evaluación" showBack />

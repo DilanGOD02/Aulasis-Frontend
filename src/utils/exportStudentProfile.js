@@ -83,7 +83,10 @@ export function exportStudentProfilePdf({ group, student, schema, modo, periodos
   doc.setFont(undefined, 'bold');
   let summary = `Promedio: ${student.avg != null ? student.avg.toFixed(1) : '—'} — ${student.status.label}`;
   if (student.asistenciaCounts) {
-    summary += `   |   Asistencia: ${student.asistenciaCounts.presente} presente · ${student.asistenciaCounts.tardia} tardía · ${student.asistenciaCounts.ausente} ausente`;
+    const c = student.asistenciaCounts;
+    const tardia = c.tardiaInjustificada + c.tardiaJustificada;
+    const ausente = c.ausenteInjustificada + c.ausenteJustificada;
+    summary += `   |   Asistencia: ${c.presente} presente · ${tardia} tardía · ${ausente} ausente`;
   }
   doc.text(summary, marginX, y);
   y += 6;
@@ -221,7 +224,10 @@ export async function exportStudentProfileExcel({ group, student, schema, modo, 
   const summaryCell = ws.getCell(2, 1);
   let summaryText = `Promedio: ${student.avg != null ? student.avg.toFixed(1) : '—'}   |   Estado: ${student.status.label}`;
   if (student.asistenciaCounts) {
-    summaryText += `   |   Asistencia: ${student.asistenciaCounts.presente} presente · ${student.asistenciaCounts.tardia} tardía · ${student.asistenciaCounts.ausente} ausente`;
+    const c = student.asistenciaCounts;
+    const tardia = c.tardiaInjustificada + c.tardiaJustificada;
+    const ausente = c.ausenteInjustificada + c.ausenteJustificada;
+    summaryText += `   |   Asistencia: ${c.presente} presente · ${tardia} tardía · ${ausente} ausente`;
   }
   summaryCell.value = summaryText;
   summaryCell.font = { italic: true, color: { argb: 'FF475569' } };

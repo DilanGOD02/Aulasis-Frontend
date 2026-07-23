@@ -68,12 +68,12 @@ function GroupsDetailsPage() {
 
   return (
     <>
-      <GroupPageHeader group={group} />
+      <GroupPageHeader group={group} onRecalculado={reloadGroup} />
       <div className="mt-4">
         <GroupTabs group={group} groups={groupsList} selectedPeriodo={periodo} onSelectPeriodo={setPeriodo} />
       </div>
       <div className="flex-1 px-4 py-5 sm:px-6 sm:py-6">
-        <Outlet context={{ group, reloadGroup, updateStudentGrade }} />
+        <Outlet context={{ group, groupsList, reloadGroup, updateStudentGrade }} />
       </div>
     </>
   );

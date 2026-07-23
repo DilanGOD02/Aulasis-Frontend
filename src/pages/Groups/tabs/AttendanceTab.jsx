@@ -7,6 +7,7 @@ import {
   AttendanceHistorialModal,
   AttendanceExportMenu,
   countByStatus,
+  DEFAULT_ENTRY,
 } from '../../../components/Groups/Attendance';
 import { asistenciasService } from '../../../services/asistenciasService';
 
@@ -35,7 +36,7 @@ function AttendanceTab() {
 
   const [fecha, setFecha] = useState(() => defaultFechaParaPeriodo(periodoActivo));
   const [statusById, setStatusById] = useState(() =>
-    Object.fromEntries(group.students.map((s) => [s.id, s.todayStatus ?? 'presente'])),
+    Object.fromEntries(group.students.map((s) => [s.id, s.todayStatus ?? DEFAULT_ENTRY])),
   );
   const [isLoadingFecha, setIsLoadingFecha] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -53,7 +54,7 @@ function AttendanceTab() {
   useEffect(() => {
     if (esGlobal) return;
     if (isHoy) {
-      setStatusById(Object.fromEntries(group.students.map((s) => [s.id, s.todayStatus ?? 'presente'])));
+      setStatusById(Object.fromEntries(group.students.map((s) => [s.id, s.todayStatus ?? DEFAULT_ENTRY])));
       return;
     }
     let cancelled = false;
@@ -62,9 +63,19 @@ function AttendanceTab() {
       .porFecha(group.id, fecha)
       .then((data) => {
         if (cancelled) return;
-        const estadoPorMatricula = new Map(data.registros.map((r) => [r.grupoEstudianteId, r.estado]));
+        const registroPorMatricula = new Map(data.registros.map((r) => [r.grupoEstudianteId, r]));
         setStatusById(
-          Object.fromEntries(group.students.map((s) => [s.id, estadoPorMatricula.get(s.id) ?? 'presente'])),
+          Object.fromEntries(
+            group.students.map((s) => {
+              const r = registroPorMatricula.get(s.id);
+              return [
+                s.id,
+                r?.estado
+                  ? { estado: r.estado, justificada: !!r.justificada, horaLlegada: r.horaLlegada ?? null }
+                  : DEFAULT_ENTRY,
+              ];
+            }),
+          ),
         );
       })
       .finally(() => !cancelled && setIsLoadingFecha(false));
@@ -76,13 +87,32 @@ function AttendanceTab() {
 
   const counts = useMemo(() => countByStatus(statusById), [statusById]);
 
-  const setStatus = (id, status) => {
+  const setStatus = (id, estado) => {
     setSaved(false);
-    setStatusById((prev) => ({ ...prev, [id]: status }));
+    setStatusById((prev) => ({
+      ...prev,
+      // Cambiar de estado resetea los flags — evita que quede "justificada"
+      // pegada de un estado anterior sin que el docente la haya vuelto a marcar.
+      [id]: { estado, justificada: false, horaLlegada: null },
+    }));
+  };
+  const toggleFlag = (id, flag) => {
+    setSaved(false);
+    setStatusById((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], [flag]: !prev[id]?.[flag] },
+    }));
+  };
+  const setHoraLlegada = (id, horaLlegada) => {
+    setSaved(false);
+    setStatusById((prev) => ({
+      ...prev,
+      [id]: { ...prev[id], horaLlegada },
+    }));
   };
   const markAllPresent = () => {
     setSaved(false);
-    setStatusById(Object.fromEntries(group.students.map((s) => [s.id, 'presente'])));
+    setStatusById(Object.fromEntries(group.students.map((s) => [s.id, { ...DEFAULT_ENTRY }])));
   };
 
   const handleGuardar = async () => {
@@ -91,13 +121,18 @@ function AttendanceTab() {
       await asistenciasService.guardar({
         grupoId: group.id,
         fecha,
-        entradas: Object.entries(statusById).map(([grupoEstudianteId, estado]) => ({
+        entradas: Object.entries(statusById).map(([grupoEstudianteId, entry]) => ({
           grupoEstudianteId: Number(grupoEstudianteId),
-          estado,
+          estado: entry.estado,
+          justificada: entry.justificada,
+          horaLlegada: entry.horaLlegada || undefined,
         })),
       });
       setSaved(true);
-      if (isHoy) await reloadGroup();
+      // Siempre recarga el grupo (no solo si es hoy) — así Estudiantes/Notas/
+      // Resumen ya muestran los promedios y % de asistencia recién calculados
+      // en cuanto el profesor cambia de tab, sin tener que refrescar a mano.
+      await reloadGroup();
     } finally {
       setIsSaving(false);
     }
@@ -138,11 +173,13 @@ function AttendanceTab() {
                 </div>
                 <span className="min-w-0 flex-1 truncate text-[14px] font-bold text-[#1E293B]">{student.name}</span>
                 {c ? (
-                  <div className="flex gap-3 text-[12.5px] font-bold">
+                  <div className="flex flex-wrap justify-end gap-x-3 gap-y-0.5 text-[12.5px] font-bold">
                     <span className="text-[#16A34A]">{c.presente} presente</span>
-                    <span className="text-[#C2410C]">{c.tardia} tardía</span>
-                    <span className="text-[#DC2626]">{c.ausente} ausente</span>
-                    <span className="text-[#64748B]">{c.justificada} justif.</span>
+                    <span className="text-[#C2410C]">{c.tardiaInjustificada + c.tardiaJustificada} tardía</span>
+                    <span className="text-[#DC2626]">{c.ausenteInjustificada + c.ausenteJustificada} ausente</span>
+                    <span className="text-[#64748B]">
+                      {c.ausenteJustificada + c.tardiaJustificada} justif.
+                    </span>
                   </div>
                 ) : (
                   <span className="text-[13px] font-semibold text-[#94A3B8]">Sin registros</span>
@@ -207,10 +244,17 @@ function AttendanceTab() {
 
       <div className="mb-3 flex items-center gap-1.5 text-[13px] font-semibold text-[#64748B]">
         <i className="ph ph-hand-tap text-[16px] text-[var(--brand)]" />
-        Tocá el estado de cada estudiante: presente, ausente, tardía o justificada.
+        Tocá el estado de cada estudiante: presente, ausente o tardía. Si es justificada, o si es tardía, marcalo
+        debajo (para la tardía, la hora real de llegada).
       </div>
 
-      <AttendanceList students={group.students} statusById={statusById} onSetStatus={setStatus} />
+      <AttendanceList
+        students={group.students}
+        statusById={statusById}
+        onSetStatus={setStatus}
+        onToggleFlag={toggleFlag}
+        onSetHoraLlegada={setHoraLlegada}
+      />
 
       <button
         type="button"
@@ -232,6 +276,7 @@ function AttendanceTab() {
           periodoId={periodoActivoId}
           onClose={() => setShowHistorial(false)}
           onEditarFecha={handleEditarFecha}
+          onChanged={reloadGroup}
         />
       )}
     </>
