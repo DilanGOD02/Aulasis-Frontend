@@ -40,6 +40,7 @@ export function mapEstudiante(s) {
     correoEncargado: s.correoEncargado ?? null,
     initials: initialsOf(s.nombre),
     avg: s.avg,
+    avgLiteral: s.avgLiteral ?? null,
     attendance: s.attendance,
     asistenciaCounts: s.asistenciaCounts ?? null,
     status: statusMeta(s.status),

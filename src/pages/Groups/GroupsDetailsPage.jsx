@@ -23,14 +23,14 @@ function GroupsDetailsPage() {
 
   // Aplica una nota ya guardada en backend al estado en memoria, sin refetch —
   // así si el usuario cambia de tab y vuelve, la celda no se revierte al valor viejo.
-  const updateStudentGrade = useCallback((studentId, itemId, value, avg, status) => {
+  const updateStudentGrade = useCallback((studentId, itemId, value, avg, status, avgLiteral) => {
     setGroup((prev) =>
       prev
         ? {
             ...prev,
             students: prev.students.map((s) =>
               s.id === studentId
-                ? { ...s, grades: { ...s.grades, [itemId]: value }, avg, status }
+                ? { ...s, grades: { ...s.grades, [itemId]: value }, avg, status, avgLiteral }
                 : s,
             ),
           }

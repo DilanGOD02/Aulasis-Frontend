@@ -49,7 +49,7 @@ function StudentsTable({ students, onEditar, onTrasladar, onEliminar }) {
               className="text-center text-[15.5px] font-extrabold"
               style={{ color: student.status.key === 'ok' ? '#0F172A' : student.status.color }}
             >
-              {student.avg != null && student.status.key !== 'incomplete' ? student.avg.toFixed(1) : '—'}
+              {student.avgLiteral != null ? student.avgLiteral.toFixed(1) : '—'}
             </div>
             <div className="text-center text-[13.5px] font-semibold text-[#475569]">
               {student.attendance != null ? `${student.attendance}%` : '—'}

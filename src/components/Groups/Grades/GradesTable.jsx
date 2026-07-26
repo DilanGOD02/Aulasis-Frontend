@@ -19,11 +19,12 @@ function gradeError(value, column) {
  * persist ("Guardado automático").
  */
 function GradesTable({ students, columns, onGradeChange, onGradeCommit, onOpenRubrica }) {
-  const templateColumns = `200px repeat(${columns.length}, 1fr) 92px 104px`;
+  const templateColumns = `200px repeat(${columns.length}, 1fr) 92px 92px 104px`;
   const colByKey = Object.fromEntries(columns.map((c) => [c.key, c]));
   const groups = groupColumnsByCategory(columns);
   const promCol = columns.length + 2;
-  const estadoCol = columns.length + 3;
+  const proyeccionCol = columns.length + 3;
+  const estadoCol = columns.length + 4;
 
   const groupCells = groups.reduce((acc, g) => {
     const start = acc.length ? acc[acc.length - 1].start + acc[acc.length - 1].count : 2;
@@ -32,7 +33,7 @@ function GradesTable({ students, columns, onGradeChange, onGradeCommit, onOpenRu
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-[#EEF1F6] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-      <div style={{ minWidth: 200 + columns.length * 70 + 92 + 104 }}>
+      <div style={{ minWidth: 200 + columns.length * 70 + 92 + 92 + 104 }}>
         <div
           className="grid border-b border-black text-[11px] font-extrabold uppercase tracking-wider"
           style={{ gridTemplateColumns: templateColumns, gridTemplateRows: 'auto auto' }}
@@ -58,8 +59,16 @@ function GradesTable({ students, columns, onGradeChange, onGradeCommit, onOpenRu
           <div
             className="border-r border-black py-2.5 text-center text-white"
             style={{ gridColumn: `${promCol}`, gridRow: '1 / 3', background: HEADER_DARK }}
+            title="Cuenta lo que sigue en blanco como 0 — cuánto lleva ganado hasta ahora"
           >
             Prom.
+          </div>
+          <div
+            className="border-r border-black py-2.5 text-center text-white"
+            style={{ gridColumn: `${proyeccionCol}`, gridRow: '1 / 3', background: HEADER_DARK }}
+            title="Proyección sobre lo ya evaluado, ignorando lo pendiente — de acá sale el estado"
+          >
+            Proyección
           </div>
           <div
             className="px-2 py-2.5 text-center text-white"
@@ -159,6 +168,9 @@ function GradesTable({ students, columns, onGradeChange, onGradeCommit, onOpenRu
               ),
             )}
 
+            <div className="border-r border-black text-center text-[15.5px] font-extrabold text-[#0F172A]">
+              {student.avgLiteral != null ? student.avgLiteral.toFixed(1) : '—'}
+            </div>
             <div
               className="border-r border-black text-center text-[15.5px] font-extrabold"
               style={{ color: student.status.key === 'ok' ? '#0F172A' : student.status.color }}

@@ -56,7 +56,7 @@ function StudentIdentityCard({ student, group, groupId, studentId }) {
             Promedio
           </div>
           <div className="mt-1 text-[26px] font-extrabold leading-none" style={{ color: student.status.color }}>
-            {student.avg != null ? student.avg.toFixed(1) : '—'}
+            {student.avgLiteral != null ? student.avgLiteral.toFixed(1) : '—'}
           </div>
           <div className="mt-1 text-[12px] font-bold" style={{ color: student.status.color }}>
             {student.status.label}

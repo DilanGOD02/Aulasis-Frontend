@@ -51,8 +51,17 @@ function GradesTab() {
         valorObtenido: value === '' || value === null ? null : Number(value),
       });
       const status = statusMeta(result.status);
-      setStudents((prev) => prev.map((s) => (s.id === studentId ? { ...s, avg: result.avg, status } : s)));
-      updateStudentGrade?.(studentId, itemId, value === '' || value === null ? null : Number(value), result.avg, status);
+      setStudents((prev) =>
+        prev.map((s) => (s.id === studentId ? { ...s, avg: result.avg, avgLiteral: result.avgLiteral, status } : s)),
+      );
+      updateStudentGrade?.(
+        studentId,
+        itemId,
+        value === '' || value === null ? null : Number(value),
+        result.avg,
+        status,
+        result.avgLiteral,
+      );
     } catch {
       // silencioso: la celda queda con el valor tecleado, se reintentará en el próximo blur/guardado
     }

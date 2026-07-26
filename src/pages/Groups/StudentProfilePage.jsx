@@ -47,6 +47,7 @@ function StudentProfilePage() {
         correoEncargado: perfil.correoEncargado ?? null,
         rachaAsistencia: perfil.rachaAsistencia ?? null,
         avg: perfil.avg,
+        avgLiteral: perfil.avgLiteral ?? null,
         asistenciaCounts: perfil.asistenciaCounts ?? null,
         status: statusMeta(perfil.status),
         promediosPorPeriodo: perfil.promediosPorPeriodo ?? {},
@@ -150,7 +151,7 @@ function StudentProfilePage() {
               modo={group.modo}
               periodos={periodos}
               onEditItem={handleEditItem}
-              totalAvg={student.avg}
+              totalAvg={student.avgLiteral}
             />
           </div>
         </div>
