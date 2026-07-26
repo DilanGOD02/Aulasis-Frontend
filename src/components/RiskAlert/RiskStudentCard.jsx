@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { gruposService } from '../../services/gruposService';
 
 const SEVERITY = {
   critico: { border: '#DC2626', rowBg: '#FEF2F2', badgeBg: '#DC2626', label: 'CRÍTICO' },
@@ -8,7 +10,20 @@ const SEVERITY = {
 /** One row in the consolidated risk list: student, why they're flagged, and a shortcut to their profile. */
 function RiskStudentCard({ student, highlighted, cardRef }) {
   const navigate = useNavigate();
+  const [isNavigating, setIsNavigating] = useState(false);
   const { border, rowBg, badgeBg, label } = SEVERITY[student.severity];
+
+  // /riesgo no informa el centroEducativoId del grupo, así que se resuelve con un
+  // fetch puntual a /grupos/:id (que sí lo trae) antes de armar la ruta anidada.
+  const handleVerPerfil = async () => {
+    setIsNavigating(true);
+    try {
+      const grupo = await gruposService.getOne(student.groupId);
+      navigate(`/inicio/${grupo.centroEducativoId}/grupos/${student.groupId}/estudiantes/${student.studentId}`);
+    } finally {
+      setIsNavigating(false);
+    }
+  };
 
   return (
     <div
@@ -48,8 +63,9 @@ function RiskStudentCard({ student, highlighted, cardRef }) {
 
       <button
         type="button"
-        onClick={() => navigate(`/grupos/${student.groupId}/estudiantes/${student.studentId}`)}
-        className="press flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[11px] border border-transparent bg-white px-3.5 py-2 text-[13px] font-bold text-[#334155] shadow-sm"
+        onClick={handleVerPerfil}
+        disabled={isNavigating}
+        className="press flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[11px] border border-transparent bg-white px-3.5 py-2 text-[13px] font-bold text-[#334155] shadow-sm disabled:opacity-60"
       >
         Ver perfil <i className="ph-bold ph-arrow-right text-[13px]" />
       </button>

@@ -5,6 +5,8 @@ import { gruposService } from '../../services/gruposService';
 import { periodosService } from '../../services/periodosService';
 import { mapGrupoDetail, mapTemplate } from '../../utils/mappers';
 import { useToast } from '../../context/ToastContext';
+import ImageUploader from './ImageUploader';
+import { COLORS } from './colorPalette';
 
 const DAYS = [
   { key: 'L', label: 'Lunes', backend: 'lunes' },
@@ -13,7 +15,6 @@ const DAYS = [
   { key: 'J', label: 'Jueves', backend: 'jueves' },
   { key: 'V', label: 'Viernes', backend: 'viernes' },
 ];
-const COLORS = ['#6366F1', '#0D9488', '#22C55E', '#F59E0B', '#EF4444', '#A855F7', '#0EA5E9', '#6D28D9'];
 const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1);
 const MINUTES_5 = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
 const DAY_BY_BACKEND = Object.fromEntries(DAYS.map((d) => [d.backend, d.key]));
@@ -93,7 +94,7 @@ function TimeField12h({ value, onChange }) {
  * nada de la institución). Los periodos "nuevos" que se crean acá quedan
  * privados de este grupo, no le salen a otros profesores.
  */
-function CreateGroupForm({ groupId }) {
+function CreateGroupForm({ groupId, centroEducativoId }) {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const isEditMode = !!groupId;
@@ -104,6 +105,7 @@ function CreateGroupForm({ groupId }) {
   const [minutosPorLeccion, setMinutosPorLeccion] = useState(40);
   const [schedule, setSchedule] = useState(emptySchedule);
   const [color, setColor] = useState(COLORS[0]);
+  const [logoUrl, setLogoUrl] = useState(null);
   const [templates, setTemplates] = useState([]);
   const [templateId, setTemplateId] = useState(null);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
@@ -149,6 +151,7 @@ function CreateGroupForm({ groupId }) {
         setAnioLectivo(grupo.anioLectivo ?? new Date().getFullYear());
         setMinutosPorLeccion(grupo.minutosPorLeccion ?? 40);
         setColor(grupo.color ?? COLORS[0]);
+        setLogoUrl(grupo.logoUrl ?? null);
 
         const nextSchedule = emptySchedule();
         for (const h of grupo.horarios ?? []) {
@@ -230,6 +233,7 @@ function CreateGroupForm({ groupId }) {
           anioLectivo: Number(anioLectivo),
           minutosPorLeccion: Number(minutosPorLeccion),
           horarios,
+          ...(logoUrl ? { logoUrl } : {}),
         });
 
         for (const periodoId of Object.keys(seleccionInicial)) {
@@ -254,9 +258,10 @@ function CreateGroupForm({ groupId }) {
         }
 
         showToast('Grupo actualizado');
-        navigate(`/grupos/${groupId}`);
+        navigate(`/inicio/${centroEducativoId}/grupos/${groupId}`);
       } else {
         const grupo = await gruposService.create({
+          centroEducativoId: Number(centroEducativoId),
           seccion,
           materia,
           color,
@@ -264,6 +269,7 @@ function CreateGroupForm({ groupId }) {
           minutosPorLeccion: Number(minutosPorLeccion),
           esquemaOrigenId: templateId,
           horarios,
+          ...(logoUrl ? { logoUrl } : {}),
           periodos: seleccionados.map(([periodoLectivoId, fechas]) => ({
             periodoLectivoId: Number(periodoLectivoId),
             fechaInicio: fechas.fechaInicio,
@@ -277,7 +283,7 @@ function CreateGroupForm({ groupId }) {
           })),
         });
         showToast('Grupo creado');
-        navigate(`/grupos/${grupo.id}`);
+        navigate(`/inicio/${centroEducativoId}/grupos/${grupo.id}`);
       }
     } catch (err) {
       setError(err.message);
@@ -511,6 +517,17 @@ function CreateGroupForm({ groupId }) {
               <TimeField12h value={schedule[d.key].to} onChange={(v) => setDayTime(d.key, 'to', v)} />
             </div>
           ))}
+        </div>
+
+        <div className="mb-5">
+          <ImageUploader
+            value={logoUrl}
+            onChange={setLogoUrl}
+            tipo="grupo"
+            entidadId={groupId}
+            label="Logo del grupo (opcional)"
+            shape="circle"
+          />
         </div>
 
         <label className="mb-1 block text-[13px] font-bold text-[#475569]">Color identificador del grupo</label>

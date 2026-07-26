@@ -1,8 +1,8 @@
 import { apiFetch, jsonHeaders, parseJsonOrThrow } from './apiClient';
 
 export const gruposService = {
-  async list() {
-    const response = await apiFetch('/grupos');
+  async list(centroEducativoId) {
+    const response = await apiFetch(`/grupos?centroEducativoId=${centroEducativoId}`);
     return parseJsonOrThrow(response);
   },
 

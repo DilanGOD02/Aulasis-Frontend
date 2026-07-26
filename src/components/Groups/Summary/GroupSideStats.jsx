@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 function StatCard({ icon, label, value }) {
   return (
@@ -15,6 +15,7 @@ function StatCard({ icon, label, value }) {
 /** Right-column mini cards: next class schedule, student count, general average. */
 function GroupSideStats({ groupId, nextClassSchedule, studentCount, avgGeneral }) {
   const navigate = useNavigate();
+  const { centroId } = useParams();
 
   return (
     <div className="flex flex-1 min-w-[220px] flex-col gap-3.5">
@@ -23,7 +24,7 @@ function GroupSideStats({ groupId, nextClassSchedule, studentCount, avgGeneral }
         <div className="my-2 text-[18px] font-extrabold text-[#0F172A]">{nextClassSchedule || 'Sin horario'}</div>
         <button
           type="button"
-          onClick={() => navigate(`/grupos/${groupId}/asistencia`)}
+          onClick={() => navigate(`/inicio/${centroId}/grupos/${groupId}/asistencia`)}
           className="press inline-flex items-center gap-1.5 text-[13.5px] font-bold text-[var(--brand)]"
         >
           Pasar asistencia <i className="ph-bold ph-arrow-right text-[14px]" />

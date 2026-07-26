@@ -6,4 +6,6 @@ export { default as Navbar } from './Navbar/Navbar';
 export { default as BottomNav } from './BottomNav';
 export { default as PageHeader } from './PageHeader';
 export { default as CreateGroupForm } from './CreateGroupForm';
+export { default as CreateCentroEducativoForm } from './CreateCentroEducativoForm';
+export { default as ImageUploader } from './ImageUploader';
 export { default as OnboardingTour } from './Onboarding/OnboardingTour';

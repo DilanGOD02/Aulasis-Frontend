@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 /** Roster table: Estudiante / Prom. / Asist. / Estado / Acciones. Each row is tinted a soft pastel matching the student's status. */
 function StudentsTable({ students, onEditar, onTrasladar, onEliminar }) {
   const navigate = useNavigate();
-  const { groupId } = useParams();
+  const { groupId, centroId } = useParams();
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-[#EEF1F6] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
@@ -23,7 +23,7 @@ function StudentsTable({ students, onEditar, onTrasladar, onEliminar }) {
             style={{ background: student.status.bg }}
           >
             <div
-              onClick={() => navigate(`/grupos/${groupId}/estudiantes/${student.id}`)}
+              onClick={() => navigate(`/inicio/${centroId}/grupos/${groupId}/estudiantes/${student.id}`)}
               className="press flex items-center gap-2.5 px-4 py-2.5"
             >
               <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-white/70 text-[11.5px] font-extrabold text-[#334155]">

@@ -16,7 +16,7 @@ const TABS = [
  */
 function GroupTabs({ group, groups, selectedPeriodo, onSelectPeriodo }) {
   const navigate = useNavigate();
-  const { groupId } = useParams();
+  const { groupId, centroId } = useParams();
   const { pathname } = useLocation();
   const tabSuffix = pathname.split(`/grupos/${groupId}`)[1] || '';
 
@@ -27,7 +27,7 @@ function GroupTabs({ group, groups, selectedPeriodo, onSelectPeriodo }) {
           <span className="h-2.5 w-2.5 shrink-0 rounded-[3px]" style={{ background: group.color }} />
           <select
             value={group.id}
-            onChange={(e) => navigate(`/grupos/${e.target.value}${tabSuffix}`)}
+            onChange={(e) => navigate(`/inicio/${centroId}/grupos/${e.target.value}${tabSuffix}`)}
             className="cursor-pointer appearance-none bg-transparent text-[13.5px] font-extrabold text-[#0F172A] outline-none"
           >
             {groups.map((g) => (

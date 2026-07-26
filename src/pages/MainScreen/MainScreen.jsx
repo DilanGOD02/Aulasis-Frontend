@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { PageHeader } from '../../components/Globales';
 import { RiskAlertBanner, NextClassCard, PeriodSummaryCard, GroupsSection } from '../../components/MainScreen';
 import { dashboardService } from '../../services/dashboardService';
@@ -7,20 +8,26 @@ import { riesgoService } from '../../services/riesgoService';
 import { mapGrupoResumen } from '../../utils/mappers';
 
 function MainScreen() {
+  const { centroId } = useParams();
   const [summary, setSummary] = useState(null);
   const [groups, setGroups] = useState([]);
   const [riesgo, setRiesgo] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([dashboardService.getResumen(), gruposService.list(), riesgoService.listar()])
+    setIsLoading(true);
+    Promise.all([
+      dashboardService.getResumen(centroId),
+      gruposService.list(centroId),
+      riesgoService.listar(centroId),
+    ])
       .then(([dash, gruposList, riesgoList]) => {
         setSummary(dash);
         setGroups(gruposList.map(mapGrupoResumen));
         setRiesgo(riesgoList);
       })
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [centroId]);
 
   if (isLoading) {
     return (

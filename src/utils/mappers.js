@@ -73,6 +73,8 @@ export function mapGrupoDetail(g) {
     materia: g.materia,
     sub: estudianteCount(g.studentCount),
     color: g.color ?? '#6366F1',
+    logoUrl: g.logoUrl ?? null,
+    centroEducativoId: g.centroEducativoId ?? null,
     esquemaEvaluacionId: g.esquemaEvaluacionId,
     anioLectivo: g.anioLectivo,
     minutosPorLeccion: g.minutosPorLeccion ?? 40,

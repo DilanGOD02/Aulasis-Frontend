@@ -7,7 +7,7 @@ import { mapGrupoDetail, mapGrupoResumen } from '../../utils/mappers';
 
 /** Shell shared by every /grupos/:groupId screen: gradient header + tabs + the active tab's content. */
 function GroupsDetailsPage() {
-  const { groupId } = useParams();
+  const { groupId, centroId } = useParams();
   const [group, setGroup] = useState(null);
   const [groupsList, setGroupsList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,10 +41,11 @@ function GroupsDetailsPage() {
   useEffect(() => {
     setIsLoading(true);
     setNotFound(false);
-    Promise.all([reloadGroup(), gruposService.list().then((list) => setGroupsList(list.map(mapGrupoResumen)))]).finally(
-      () => setIsLoading(false),
-    );
-  }, [reloadGroup]);
+    Promise.all([
+      reloadGroup(),
+      gruposService.list(centroId).then((list) => setGroupsList(list.map(mapGrupoResumen))),
+    ]).finally(() => setIsLoading(false));
+  }, [reloadGroup, centroId]);
 
   // Al cambiar de grupo (no de periodo), volvemos a "periodo actual" por defecto.
   useEffect(() => {

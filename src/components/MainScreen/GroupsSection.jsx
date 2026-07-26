@@ -1,9 +1,10 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import GroupCard from './GroupCard';
 
 /** "Mis grupos" heading + responsive card grid, with a dashed "create group" tile at the end. */
 function GroupsSection({ groups }) {
   const navigate = useNavigate();
+  const { centroId } = useParams();
 
   return (
     <div>
@@ -18,7 +19,7 @@ function GroupsSection({ groups }) {
         ))}
 
         <div
-          onClick={() => navigate('/grupos/crear')}
+          onClick={() => navigate(`/inicio/${centroId}/grupos/crear`)}
           className="press flex min-h-[150px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-[1.5px] border-dashed border-[#CBD8E8] px-4 py-6 text-center"
         >
           <div className="mb-1 flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[#EEF2F7]">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { gruposService } from '../../services/gruposService';
 import { useConfirm } from '../../context/ConfirmContext';
 import { useToast } from '../../context/ToastContext';
@@ -12,6 +12,7 @@ import { useToast } from '../../context/ToastContext';
  */
 function GroupPageHeader({ group, onRecalculado }) {
   const navigate = useNavigate();
+  const { centroId } = useParams();
   const confirm = useConfirm();
   const { showToast } = useToast();
   const [showMenu, setShowMenu] = useState(false);
@@ -44,7 +45,7 @@ function GroupPageHeader({ group, onRecalculado }) {
     setIsDeleting(true);
     try {
       await gruposService.remove(group.id);
-      navigate('/inicio');
+      navigate(`/inicio/${centroId}`);
     } catch (err) {
       showToast(err.message, 'error');
       setIsDeleting(false);
@@ -99,7 +100,7 @@ function GroupPageHeader({ group, onRecalculado }) {
                 type="button"
                 onClick={() => {
                   setShowMenu(false);
-                  navigate(`/grupos/${group.id}/editar`);
+                  navigate(`/inicio/${centroId}/grupos/${group.id}/editar`);
                 }}
                 className="press flex w-full items-center gap-2 rounded-[9px] px-3 py-2.5 text-[13.5px] font-bold text-[#334155]"
               >
