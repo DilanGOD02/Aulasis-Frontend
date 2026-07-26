@@ -14,8 +14,9 @@ import { statusMeta } from '../../../utils/statusMeta';
 
 const LEGEND = [
   { key: 'ok', dot: '#16A34A', label: 'aprobados' },
-  { key: 'limit', dot: '#D97706', label: 'en riesgo' },
-  { key: 'risk', dot: '#DC2626', label: 'reprobados' },
+  { key: 'limit', dot: '#1D4ED8', label: 'van bien' },
+  { key: 'risk', dot: '#D97706', label: 'en riesgo' },
+  { key: 'reprobado', dot: '#DC2626', label: 'reprobados' },
   { key: 'incomplete', dot: '#94A3B8', label: 'incompletos' },
 ];
 
@@ -59,7 +60,7 @@ function GradesTab() {
 
   const distribution = students.reduce(
     (acc, s) => ({ ...acc, [s.status.key]: (acc[s.status.key] ?? 0) + 1 }),
-    { ok: 0, limit: 0, risk: 0, incomplete: 0 },
+    { ok: 0, limit: 0, risk: 0, reprobado: 0, incomplete: 0 },
   );
   const conNota = students.filter((s) => s.avg != null);
   const groupAvg = conNota.length ? conNota.reduce((sum, s) => sum + s.avg, 0) / conNota.length : null;

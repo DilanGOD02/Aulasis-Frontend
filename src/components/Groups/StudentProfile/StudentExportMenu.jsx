@@ -1,9 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { exportStudentProfileExcel, exportStudentProfilePdf } from '../../../utils/exportStudentProfile';
+import {
+  exportStudentProfileExcel,
+  exportStudentProfilePdf,
+  exportStudentTotalsExcel,
+  exportStudentTotalsPdf,
+} from '../../../utils/exportStudentProfile';
 
 const OPTIONS = [
-  { key: 'pdf', label: 'Exportar PDF', icon: 'ph-file-pdf' },
-  { key: 'excel', label: 'Exportar Excel', icon: 'ph-file-xls' },
+  { key: 'pdf-desglosado', label: 'Exportar desglosado PDF', icon: 'ph-file-pdf' },
+  { key: 'excel-desglosado', label: 'Exportar desglosado Excel', icon: 'ph-file-xls' },
+  { key: 'pdf-totales', label: 'Exportar totales PDF', icon: 'ph-file-pdf' },
+  { key: 'excel-totales', label: 'Exportar totales Excel', icon: 'ph-file-xls' },
 ];
 
 /** Hamburger menu del perfil de un estudiante — exporta solo los datos de este estudiante (aislado del grupo). */
@@ -25,8 +32,10 @@ function StudentExportMenu({ group, student, schema, modo, periodos, historial }
     setExporting(key);
     try {
       const payload = { group, student, schema, modo, periodos, historial };
-      if (key === 'pdf') exportStudentProfilePdf(payload);
-      else if (key === 'excel') await exportStudentProfileExcel(payload);
+      if (key === 'pdf-desglosado') exportStudentProfilePdf(payload);
+      else if (key === 'excel-desglosado') await exportStudentProfileExcel(payload);
+      else if (key === 'pdf-totales') exportStudentTotalsPdf(payload);
+      else if (key === 'excel-totales') await exportStudentTotalsExcel(payload);
     } finally {
       setExporting(null);
       setOpen(false);

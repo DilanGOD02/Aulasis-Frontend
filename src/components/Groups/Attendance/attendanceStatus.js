@@ -10,7 +10,7 @@ export const ATTENDANCE_STATUSES = [
   { key: 'tardia', label: 'Tardías', icon: 'ph-clock', color: '#C2410C', bg: '#FFF7ED', border: '#FCE3C7' },
 ];
 
-export const DEFAULT_ENTRY = { estado: 'presente', justificada: false, horaLlegada: null };
+export const DEFAULT_ENTRY = { estado: 'presente', justificada: false, horaLlegada: null, leccionesPerdidas: null };
 
 export function countByStatus(statusById) {
   const counts = { presente: 0, ausente: 0, tardia: 0, justificadas: 0 };

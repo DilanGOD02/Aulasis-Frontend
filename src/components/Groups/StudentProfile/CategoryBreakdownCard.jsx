@@ -1,3 +1,5 @@
+import { categoryProgress, itemContributionPct } from '../../../utils/categoryProgress';
+
 /**
  * "Desglose por categoría". En modo periodo: cada ítem es editable (escribís
  * la nota y se guarda sola). En modo "Año completo": de solo lectura, una
@@ -12,27 +14,33 @@ function CategoryBreakdownCard({ schema, modo, periodos, onEditItem, totalAvg })
       <div className="mb-4 text-[16px] font-extrabold text-[#0F172A]">Desglose por categoría</div>
 
       <div className="flex flex-col gap-4">
-        {schema.map((category) => (
+        {schema.map((category) => {
+          // En modo periodo, los items en blanco cuentan como 0 (no se ignoran) —
+          // así el % refleja "lo que ya llevás", no un promedio inflado de lo poco
+          // que sí está calificado. En "Año completo" no aplica (ya es un agregado
+          // de periodos cerrados, sin items sueltos que puedan estar en blanco).
+          const { pts: puntosPonderados, pctObtenido } = esGlobal ? {} : categoryProgress(category);
+          const score = esGlobal ? category.scoreFinal : pctObtenido;
+          return (
           <div key={category.id}>
             <div className="mb-1.5 flex items-center justify-between text-[13.5px]">
               <span className="font-bold text-[#334155]">
                 {category.name} · {category.weight}%
               </span>
-              <span className="font-extrabold text-[#0F172A]">
-                {esGlobal
-                  ? category.scoreFinal != null
-                    ? Math.round(category.scoreFinal)
-                    : '—'
-                  : category.score != null
-                    ? Math.round(category.score)
-                    : '—'}
-              </span>
+              <div className="text-right">
+                <span className="font-extrabold text-[#0F172A]">
+                  {score != null ? `${Math.round(score)} pts` : '—'}
+                </span>
+                {puntosPonderados != null && (
+                  <div className="text-[10.5px] font-bold text-[#94A3B8]">{puntosPonderados.toFixed(1)}%</div>
+                )}
+              </div>
             </div>
             <div className="h-1.5 rounded-full bg-[#EEF2F7]">
               <div
                 className="h-full rounded-full bg-[var(--brand)]"
                 style={{
-                  width: `${Math.min(100, (esGlobal ? category.scoreFinal : category.score) ?? 0)}%`,
+                  width: `${Math.min(100, score ?? 0)}%`,
                 }}
               />
             </div>
@@ -56,11 +64,16 @@ function CategoryBreakdownCard({ schema, modo, periodos, onEditItem, totalAvg })
                   {category.items.map((item) => (
                     <div key={item.id} className="flex items-center justify-between gap-2 text-[12.5px] font-semibold text-[#64748B]">
                       <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                      {item.score != null && (
+                        <span className="whitespace-nowrap text-[11px] font-bold text-[var(--brand)]">
+                          {Math.round(itemContributionPct(item) * 10) / 10}% obtenido
+                        </span>
+                      )}
                       <input
                         type="text"
                         defaultValue={item.valorObtenido ?? ''}
                         onBlur={(e) => onEditItem?.(item.id, e.target.value)}
-                        className="w-[52px] rounded-md border border-[#E2E8F0] bg-[#FAFBFD] px-2 py-1 text-center text-[12.5px] font-bold text-[#1E293B] outline-none focus:border-[var(--brand)] focus:bg-white"
+                        className="w-[52px] shrink-0 rounded-md border border-[#E2E8F0] bg-[#FAFBFD] px-2 py-1 text-center text-[12.5px] font-bold text-[#1E293B] outline-none focus:border-[var(--brand)] focus:bg-white"
                       />
                     </div>
                   ))}
@@ -68,12 +81,15 @@ function CategoryBreakdownCard({ schema, modo, periodos, onEditItem, totalAvg })
               )
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="mt-4 flex items-center justify-between border-t border-[#F1F4F8] pt-3.5 text-[14px]">
         <span className="font-bold text-[#334155]">Total</span>
-        <span className="font-extrabold text-[var(--brand)]">{totalAvg != null ? totalAvg.toFixed(1) : '—'}</span>
+        <span className="font-extrabold text-[var(--brand)]">
+          {totalAvg != null ? `${totalAvg.toFixed(1)}%` : '—'}
+        </span>
       </div>
     </div>
   );

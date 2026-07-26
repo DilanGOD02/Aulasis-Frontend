@@ -78,6 +78,37 @@ export function groupColumnsByCategory(columns) {
   return groups;
 }
 
+/** Cuánto aporta esta celda a la nota final: (obtenido / valorMáximo) * peso del item (ya en unidades del 100% total, no relativo a la categoría). */
+export function contributionPct(value, column) {
+  if (value == null || value === '' || !column.valorMaximo) return null;
+  const pct = (Number(value) / column.valorMaximo) * column.weight;
+  return Math.round(pct * 10) / 10;
+}
+
+/**
+ * Puntos que la categoría ya aporta a la nota final — suma la contribución de
+ * cada item con nota; los items todavía en blanco simplemente no suman nada
+ * (equivalente a contarlos como 0), a propósito: es "cuánto lleva ganado
+ * hasta ahora", no un promedio que ignore lo que falta por calificar.
+ */
+export function categoryContributionPct(student, column, colByKey) {
+  // Categorías con un solo item (sin columna "total" propia, ver buildGradeColumns)
+  // usan ese único item como si fuera su leafKey.
+  const leafKeys = column.type === 'total' ? column.leafKeys : [column.key];
+  const total = leafKeys.reduce((sum, k) => {
+    const pct = contributionPct(student.grades[k], colByKey[k]);
+    return sum + (pct ?? 0);
+  }, 0);
+  return Math.round(total * 10) / 10;
+}
+
+/** % de la categoría ya obtenido (0-100, sobre el peso propio de la categoría) — los items en blanco cuentan como 0. */
+export function categoryScorePct(student, column, colByKey) {
+  if (!column.categoryWeight) return null;
+  const pts = categoryContributionPct(student, column, colByKey);
+  return Math.round((pts / column.categoryWeight) * 100);
+}
+
 /** "Todas · 100%" + one pill per category, each isolating that category's columns. */
 export function buildGradeFilters(schema) {
   const total = schema.reduce((sum, c) => sum + Number(c.weight || 0), 0);

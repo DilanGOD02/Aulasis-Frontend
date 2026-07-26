@@ -37,6 +37,12 @@ function StudentsTable({ students, onEditar, onTrasladar, onEliminar }) {
                     {student.telefonoEncargado}
                   </div>
                 )}
+                {student.correoEncargado && (
+                  <div className="flex items-center gap-1 truncate text-[11.5px] font-semibold text-[#94A3B8]">
+                    <i className="ph-bold ph-envelope-simple text-[11px]" />
+                    {student.correoEncargado}
+                  </div>
+                )}
               </div>
             </div>
             <div

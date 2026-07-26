@@ -1,4 +1,4 @@
-const DOT_BY_STATUS = { ok: '#16A34A', limit: '#D97706', risk: '#DC2626', incomplete: '#94A3B8' };
+const DOT_BY_STATUS = { ok: '#16A34A', limit: '#1D4ED8', risk: '#D97706', reprobado: '#DC2626', incomplete: '#94A3B8' };
 
 /**
  * Tabla de "Año completo": una columna por periodo (la nota YA obtenida ahí)

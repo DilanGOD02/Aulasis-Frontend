@@ -11,6 +11,7 @@ function AddStudentModal({ onClose, onSubmit }) {
   const [nombre, setNombre] = useState('');
   const [apellidos, setApellidos] = useState('');
   const [telefonoEncargado, setTelefonoEncargado] = useState('');
+  const [correoEncargado, setCorreoEncargado] = useState('');
   const [existing, setExisting] = useState(null);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,6 +25,7 @@ function AddStudentModal({ onClose, onSubmit }) {
         setNombre(result.nombre ?? '');
         setApellidos(result.apellidos ?? '');
         setTelefonoEncargado(result.telefonoEncargado ?? '');
+        setCorreoEncargado(result.correoEncargado ?? '');
       } else {
         setExisting(null);
       }
@@ -39,6 +41,7 @@ function AddStudentModal({ onClose, onSubmit }) {
       setNombre('');
       setApellidos('');
       setTelefonoEncargado('');
+      setCorreoEncargado('');
     }
   };
 
@@ -52,6 +55,7 @@ function AddStudentModal({ onClose, onSubmit }) {
         nombre,
         apellidos,
         telefonoEncargado: telefonoEncargado.trim() || undefined,
+        correoEncargado: correoEncargado.trim() || undefined,
       });
       onClose();
     } catch (err) {
@@ -124,6 +128,19 @@ function AddStudentModal({ onClose, onSubmit }) {
               value={telefonoEncargado}
               onChange={(e) => setTelefonoEncargado(e.target.value)}
               placeholder="Ej. 8888-8888"
+              className="w-full rounded-[11px] border border-[#E2E8F0] px-3.5 py-3 text-[14.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)]"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-[13px] font-bold text-[#475569]">
+              Correo del encargado <span className="font-semibold text-[#94A3B8]">(opcional)</span>
+            </label>
+            <input
+              type="email"
+              value={correoEncargado}
+              onChange={(e) => setCorreoEncargado(e.target.value)}
+              placeholder="Ej. encargado@correo.com"
               className="w-full rounded-[11px] border border-[#E2E8F0] px-3.5 py-3 text-[14.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)]"
             />
           </div>

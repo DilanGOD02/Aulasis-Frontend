@@ -1,19 +1,7 @@
-import { groupColumnsByCategory } from './categories';
+import { groupColumnsByCategory, contributionPct, categoryContributionPct, categoryScorePct } from './categories';
 
-const DOT_BY_STATUS = { ok: '#16A34A', limit: '#D97706', risk: '#DC2626', incomplete: '#94A3B8' };
+const DOT_BY_STATUS = { ok: '#16A34A', limit: '#1D4ED8', risk: '#D97706', reprobado: '#DC2626', incomplete: '#94A3B8' };
 const HEADER_DARK = '#1E293B';
-
-function totalFor(student, column) {
-  const values = column.leafKeys.map((k) => student.grades[k]).filter((v) => v != null);
-  return values.length ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : null;
-}
-
-/** Cuánto aporta esta celda a la nota final: (obtenido / valorMáximo) * peso del item. */
-function contributionPct(value, column) {
-  if (value == null || value === '' || !column.valorMaximo) return null;
-  const pct = (Number(value) / column.valorMaximo) * column.weight;
-  return Math.round(pct * 10) / 10;
-}
 
 /** Nota fuera de rango (negativa o mayor al valor máximo del ítem) — se marca en la celda antes de guardar. */
 function gradeError(value, column) {
@@ -22,15 +10,6 @@ function gradeError(value, column) {
   if (n < 0) return 'No puede ser negativa';
   if (column.valorMaximo && n > column.valorMaximo) return `Máximo ${column.valorMaximo}`;
   return null;
-}
-
-/** Suma de lo que ya aportan los items de esta categoría — el % de la categoría obtenido hasta ahora. */
-function categoryContributionPct(student, column, colByKey) {
-  const total = column.leafKeys.reduce((sum, k) => {
-    const pct = contributionPct(student.grades[k], colByKey[k]);
-    return sum + (pct ?? 0);
-  }, 0);
-  return Math.round(total * 10) / 10;
 }
 
 /**
@@ -119,7 +98,12 @@ function GradesTable({ students, columns, onGradeChange, onGradeCommit, onOpenRu
             {columns.map((col) =>
               col.type === 'total' ? (
                 <div key={col.key} className="border-r border-black text-center">
-                  <div className="text-[14px] font-extrabold text-[var(--brand)]">{totalFor(student, col) ?? '—'}</div>
+                  <div className="text-[14px] font-extrabold text-[var(--brand)]">
+                    {(() => {
+                      const pct = categoryScorePct(student, col, colByKey);
+                      return pct != null ? `${pct}%` : '—';
+                    })()}
+                  </div>
                   <div className="-mt-0.5 text-[10.5px] font-bold text-[var(--brand)]">
                     → {categoryContributionPct(student, col, colByKey)}%
                   </div>

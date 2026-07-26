@@ -37,6 +37,7 @@ export function mapEstudiante(s) {
     name: s.nombre,
     cedula: s.cedula,
     telefonoEncargado: s.telefonoEncargado ?? null,
+    correoEncargado: s.correoEncargado ?? null,
     initials: initialsOf(s.nombre),
     avg: s.avg,
     attendance: s.attendance,

@@ -6,6 +6,7 @@ function EditStudentModal({ student, onClose, onSubmit }) {
   const [apellidos, setApellidos] = useState(student.name?.split(' ').slice(1).join(' ') ?? '');
   const [cedula, setCedula] = useState(student.cedula ?? '');
   const [telefonoEncargado, setTelefonoEncargado] = useState(student.telefonoEncargado ?? '');
+  const [correoEncargado, setCorreoEncargado] = useState(student.correoEncargado ?? '');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -19,6 +20,7 @@ function EditStudentModal({ student, onClose, onSubmit }) {
         apellidos: apellidos.trim(),
         cedula: cedula.trim(),
         telefonoEncargado: telefonoEncargado.trim() || undefined,
+        correoEncargado: correoEncargado.trim() || undefined,
       });
       onClose();
     } catch (err) {
@@ -78,6 +80,19 @@ function EditStudentModal({ student, onClose, onSubmit }) {
               value={telefonoEncargado}
               onChange={(e) => setTelefonoEncargado(e.target.value)}
               placeholder="Ej. 8888-8888"
+              className="w-full rounded-[11px] border border-[#E2E8F0] px-3.5 py-3 text-[14.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)]"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-[13px] font-bold text-[#475569]">
+              Correo del encargado <span className="font-semibold text-[#94A3B8]">(opcional)</span>
+            </label>
+            <input
+              type="email"
+              value={correoEncargado}
+              onChange={(e) => setCorreoEncargado(e.target.value)}
+              placeholder="Ej. encargado@correo.com"
               className="w-full rounded-[11px] border border-[#E2E8F0] px-3.5 py-3 text-[14.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)]"
             />
           </div>

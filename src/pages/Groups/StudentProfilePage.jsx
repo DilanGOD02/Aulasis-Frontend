@@ -32,14 +32,32 @@ function StudentProfilePage() {
       const mappedGroup = mapGrupoDetail(groupData);
       setGroup(mappedGroup);
       setPeriodos(perfil.periodos ?? []);
+      // El % de ausentismo/lecciones perdidas viene a nivel raíz en modo "periodo"
+      // puntual, y dentro de cada entrada de perfil.periodos[] en modo "global"
+      // (año completo) — ahí se toma el periodo que esté seleccionado/actual.
+      const periodoGlobalActivo =
+        perfil.modo === 'global'
+          ? (perfil.periodos ?? []).find((p) => p.id === perfil.periodoActualId)
+          : null;
+
       setStudent({
         initials: initialsOf(perfil.nombre),
         name: perfil.nombre,
         cedula: perfil.cedula,
+        correoEncargado: perfil.correoEncargado ?? null,
+        rachaAsistencia: perfil.rachaAsistencia ?? null,
         avg: perfil.avg,
         asistenciaCounts: perfil.asistenciaCounts ?? null,
         status: statusMeta(perfil.status),
         promediosPorPeriodo: perfil.promediosPorPeriodo ?? {},
+        totalLeccionesPeriodo:
+          perfil.modo === 'global' ? (periodoGlobalActivo?.totalLeccionesPeriodo ?? null) : (perfil.totalLeccionesPeriodo ?? null),
+        leccionesPerdidasAcumuladas:
+          perfil.modo === 'global'
+            ? (periodoGlobalActivo?.leccionesPerdidasAcumuladas ?? null)
+            : (perfil.leccionesPerdidasAcumuladas ?? null),
+        porcentajeAusentismo:
+          perfil.modo === 'global' ? (periodoGlobalActivo?.porcentajeAusentismo ?? null) : (perfil.porcentajeAusentismo ?? null),
       });
       setSchema(mergeBreakdown(mappedGroup.evaluationSchema, perfil.breakdown));
       setHistorial(perfil.historial ?? []);
@@ -124,7 +142,7 @@ function StudentProfilePage() {
       <div className="flex-1 px-4 py-5 sm:px-6 sm:py-6">
         <div className="mb-[18px] flex flex-wrap items-start gap-[18px]">
           <div className="flex-[2] min-w-[300px]">
-            <StudentIdentityCard student={student} group={group} />
+            <StudentIdentityCard student={student} group={group} groupId={groupId} studentId={studentId} />
           </div>
           <div className="min-w-[240px] flex-1">
             <CategoryBreakdownCard
@@ -137,7 +155,7 @@ function StudentProfilePage() {
           </div>
         </div>
 
-        <AttendanceHistoryCard historial={historial} />
+        <AttendanceHistoryCard historial={historial} student={student} />
       </div>
     </>
   );

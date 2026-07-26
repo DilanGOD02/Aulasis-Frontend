@@ -18,9 +18,13 @@ function dateLabelOf(fecha) {
 }
 
 /** "Historial de asistencia" — asistencias reales de esta matrícula, más recientes primero. */
-function AttendanceHistoryCard({ historial }) {
+function AttendanceHistoryCard({ historial, student }) {
   const counts = historial.reduce((acc, h) => ({ ...acc, [h.estado]: (acc[h.estado] ?? 0) + 1 }), {});
   const justificadas = historial.filter((h) => h.justificada).length;
+
+  const totalLecciones = student?.totalLeccionesPeriodo ?? null;
+  const leccionesPerdidas = student?.leccionesPerdidasAcumuladas ?? null;
+  const porcentajeAusentismo = student?.porcentajeAusentismo ?? null;
 
   return (
     <div className="rounded-2xl border border-[#EEF1F6] bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)] sm:p-6">
@@ -39,6 +43,22 @@ function AttendanceHistoryCard({ historial }) {
           </span>
         </div>
       </div>
+
+      {student && (
+        <div className="mb-4 rounded-[12px] bg-[#FAFBFD] px-4 py-3 text-[13px] font-bold text-[#334155]">
+          {totalLecciones == null ? (
+            <span className="text-[#94A3B8]">Este periodo no tiene el total de lecciones declarado.</span>
+          ) : (
+            <span>
+              % de ausentismo:{' '}
+              <span style={{ color: (porcentajeAusentismo ?? 0) >= 50 ? '#DC2626' : '#C2410C' }}>
+                {porcentajeAusentismo != null ? `${Math.round(porcentajeAusentismo)}%` : '—'}
+              </span>{' '}
+              · {leccionesPerdidas ?? 0} de {totalLecciones} lecciones perdidas
+            </span>
+          )}
+        </div>
+      )}
 
       {historial.length === 0 ? (
         <div className="py-2 text-[13.5px] font-semibold text-[#94A3B8]">Todavía no hay asistencia registrada.</div>

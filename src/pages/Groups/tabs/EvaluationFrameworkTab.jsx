@@ -3,12 +3,13 @@ import { useOutletContext } from 'react-router-dom';
 import { SchemaBuilderForm } from '../../../components/EvaluationFrameworks';
 import { esquemasService } from '../../../services/esquemasService';
 import { mapEsquemaDetail, toEsquemaPayload } from '../../../utils/mappers';
+import { useToast } from '../../../context/ToastContext';
 
 function EvaluationFrameworkTab() {
   const { group, reloadGroup } = useOutletContext();
+  const { showToast } = useToast();
   const [sourceId, setSourceId] = useState('current');
   const [templates, setTemplates] = useState([]);
-  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     // Necesitamos los items de cada plantilla (no solo el resumen) para poder
@@ -24,7 +25,7 @@ function EvaluationFrameworkTab() {
   const handleSave = async (categories) => {
     await esquemasService.update(group.esquemaEvaluacionId, toEsquemaPayload(categories, group.name));
     await reloadGroup();
-    setSaved(true);
+    showToast('Esquema guardado', 'success');
   };
 
   return (
@@ -33,10 +34,7 @@ function EvaluationFrameworkTab() {
         <label className="text-[13px] font-bold text-[#475569]">Empezar desde una plantilla</label>
         <select
           value={sourceId}
-          onChange={(e) => {
-            setSourceId(e.target.value);
-            setSaved(false);
-          }}
+          onChange={(e) => setSourceId(e.target.value)}
           className="ml-auto rounded-[10px] border border-[#E2E8F0] bg-white px-3 py-2 text-[13.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)]"
         >
           <option value="current">Esquema actual del grupo</option>
@@ -47,13 +45,6 @@ function EvaluationFrameworkTab() {
           ))}
         </select>
       </div>
-
-      {saved && (
-        <div className="mb-4 flex items-center gap-2 rounded-[11px] bg-[#ECFDF3] px-3.5 py-2.5 text-[13px] font-bold text-[#15803D]">
-          <i className="ph-fill ph-check-circle text-[16px]" />
-          Esquema guardado.
-        </div>
-      )}
 
       <SchemaBuilderForm key={sourceId} initialCategories={categoriesFor(sourceId)} onSave={handleSave} />
     </>

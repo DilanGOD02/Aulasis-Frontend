@@ -1,15 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  exportNotasExcel,
+  exportNotasDesglosadasExcel,
+  exportNotasDesglosadasPdf,
   exportNotasGlobalExcel,
   exportNotasGlobalPdf,
-  exportNotasPdf,
+  exportNotasResumenExcel,
+  exportNotasResumenPdf,
   exportNotasSea,
 } from '../../../utils/exportNotas';
 
 const OPTIONS = [
-  { key: 'pdf', label: 'Exportar notas PDF', icon: 'ph-file-pdf' },
-  { key: 'excel', label: 'Exportar notas Excel', icon: 'ph-file-xls' },
+  { key: 'pdf-desglosado', label: 'Exportar notas desglosadas PDF', icon: 'ph-file-pdf' },
+  { key: 'excel-desglosado', label: 'Exportar notas desglosadas Excel', icon: 'ph-file-xls' },
+  { key: 'pdf-resumen', label: 'Exportar notas PDF', icon: 'ph-file-pdf' },
+  { key: 'excel-resumen', label: 'Exportar notas Excel', icon: 'ph-file-xls' },
   { key: 'sea', label: 'Exportar notas SEA', icon: 'ph-file-arrow-down' },
 ];
 
@@ -38,12 +42,16 @@ function ExportMenu({ group, students }) {
       if (isGlobal) {
         if (key === 'pdf') exportNotasGlobalPdf(group, students);
         else if (key === 'excel') await exportNotasGlobalExcel(group, students);
-      } else if (key === 'pdf') {
-        exportNotasPdf(group, students);
-      } else if (key === 'excel') {
-        await exportNotasExcel(group, students);
+      } else if (key === 'pdf-desglosado') {
+        exportNotasDesglosadasPdf(group, students);
+      } else if (key === 'excel-desglosado') {
+        await exportNotasDesglosadasExcel(group, students);
+      } else if (key === 'pdf-resumen') {
+        exportNotasResumenPdf(group, students);
+      } else if (key === 'excel-resumen') {
+        await exportNotasResumenExcel(group, students);
       } else if (key === 'sea') {
-        await exportNotasSea(group, students);
+        exportNotasSea(group, students);
       }
     } finally {
       setExporting(null);

@@ -60,4 +60,21 @@ export const estudiantesService = {
     });
     return parseJsonOrThrow(response);
   },
+
+  /** Envío MANUAL (botón del profesor): informe de notas del periodo actual al correo del encargado. */
+  async enviarNota(grupoId, matriculaId) {
+    const response = await apiFetch(`/grupos/${grupoId}/estudiantes/${matriculaId}/enviar-nota`, {
+      method: 'POST',
+    });
+    return parseJsonOrThrow(response);
+  },
+
+  /** Envío MANUAL (botón del profesor): alerta de ausentismo al correo del encargado. */
+  async enviarAlertaAsistencia(grupoId, matriculaId) {
+    const response = await apiFetch(
+      `/grupos/${grupoId}/estudiantes/${matriculaId}/enviar-alerta-asistencia`,
+      { method: 'POST' },
+    );
+    return parseJsonOrThrow(response);
+  },
 };

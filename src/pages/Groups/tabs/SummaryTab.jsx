@@ -3,8 +3,10 @@ import { GradeDistributionCard, RiskStudentsCard, GroupSideStats } from '../../.
 
 function SummaryTab() {
   const { group } = useOutletContext();
-  // 'incomplete' (sin suficientes datos para juzgar) no es "riesgo" — solo al_limite/en_riesgo cuentan.
-  const riskStudents = group.students.filter((s) => s.status.key === 'limit' || s.status.key === 'risk');
+  // 'incomplete' (sin suficientes datos para juzgar) no es "riesgo", y
+  // 'limit' ("va bien" con datos parciales) tampoco — ya va aprobando. Solo
+  // cuentan los que no están aprobando: en riesgo (parcial) o reprobados (esquema completo).
+  const riskStudents = group.students.filter((s) => s.status.key === 'risk' || s.status.key === 'reprobado');
 
   return (
     <div className="flex flex-wrap items-start gap-[18px]">

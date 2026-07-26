@@ -1,4 +1,5 @@
 import { ATTENDANCE_STATUSES } from './attendanceStatus';
+import TimeField12h from '../../Globales/TimeField12h';
 
 /**
  * Roster con un toggle de 3 estados (presente/ausente/tardía) por estudiante.
@@ -6,7 +7,7 @@ import { ATTENDANCE_STATUSES } from './attendanceStatus';
  * la hora real de llegada — el backend calcula solo cuántas lecciones del
  * bloque de ese día se perdieron (ver grading.util.ts / schedule.util.ts).
  */
-function AttendanceList({ students, statusById, onSetStatus, onToggleFlag, onSetHoraLlegada }) {
+function AttendanceList({ students, statusById, onSetStatus, onToggleFlag, onSetHoraLlegada, onSetLeccionesPerdidas, lecciones }) {
   return (
     <div className="flex flex-col gap-2.5">
       {students.map((student) => {
@@ -65,14 +66,27 @@ function AttendanceList({ students, statusById, onSetStatus, onToggleFlag, onSet
                   </button>
                 )}
                 {mostrarHora && (
-                  <label className="flex items-center gap-1.5 rounded-full border border-[#E2E8F0] bg-white px-2.5 py-1 text-[11.5px] font-bold text-[#475569]">
+                  <div className="flex items-center gap-1.5 rounded-full border border-[#E2E8F0] bg-white px-2.5 py-1 text-[11.5px] font-bold text-[#475569]">
                     <i className="ph-bold ph-clock text-[13px] text-[#C2410C]" />
                     Llegó a las
+                    <TimeField12h
+                      value={current.horaLlegada || '07:00'}
+                      onChange={(v) => onSetHoraLlegada(student.id, v)}
+                      minuteStep={1}
+                    />
+                  </div>
+                )}
+                {mostrarHora && (
+                  <label className="flex items-center gap-1.5 rounded-full border border-[#E2E8F0] bg-white px-2.5 py-1 text-[11.5px] font-bold text-[#475569]">
+                    <i className="ph-bold ph-minus-circle text-[13px] text-[#C2410C]" />
+                    Lecciones perdidas
                     <input
-                      type="time"
-                      value={current.horaLlegada ?? ''}
-                      onChange={(e) => onSetHoraLlegada(student.id, e.target.value)}
-                      className="border-none bg-transparent text-[11.5px] font-bold text-[#1E293B] outline-none"
+                      type="number"
+                      min={0}
+                      max={lecciones || undefined}
+                      value={current.leccionesPerdidas ?? ''}
+                      onChange={(e) => onSetLeccionesPerdidas(student.id, e.target.value)}
+                      className="w-12 border-none bg-transparent text-[11.5px] font-bold text-[#1E293B] outline-none"
                     />
                   </label>
                 )}

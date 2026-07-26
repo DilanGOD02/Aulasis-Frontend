@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { esquemasService } from '../../services/esquemasService';
 import { gruposService } from '../../services/gruposService';
 import { periodosService } from '../../services/periodosService';
+import { centrosEducativosService } from '../../services/centrosEducativosService';
 import { mapGrupoDetail, mapTemplate } from '../../utils/mappers';
+import { formatHora12 } from '../../utils/time12h';
 import { useToast } from '../../context/ToastContext';
 import ImageUploader from './ImageUploader';
+import TimeField12h from './TimeField12h';
 import { COLORS } from './colorPalette';
 
 const DAYS = [
@@ -15,75 +18,9 @@ const DAYS = [
   { key: 'J', label: 'Jueves', backend: 'jueves' },
   { key: 'V', label: 'Viernes', backend: 'viernes' },
 ];
-const HOURS_12 = Array.from({ length: 12 }, (_, i) => i + 1);
-const MINUTES_5 = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
 const DAY_BY_BACKEND = Object.fromEntries(DAYS.map((d) => [d.backend, d.key]));
 
 const emptySchedule = () => Object.fromEntries(DAYS.map((d) => [d.key, { enabled: false, from: '07:00', to: '08:20' }]));
-
-/** "14:20" (24h, como lo espera el backend) -> { hour: 2, minute: '20', meridiem: 'p.m.' } */
-function to12h(hhmm) {
-  const [hStr, mStr] = (hhmm ?? '00:00').split(':');
-  let hour = parseInt(hStr, 10) || 0;
-  const meridiem = hour >= 12 ? 'p.m.' : 'a.m.';
-  hour = hour % 12;
-  if (hour === 0) hour = 12;
-  return { hour, minute: mStr ?? '00', meridiem };
-}
-
-/** Inverso de to12h: arma de vuelta el "HH:MM" 24h que espera el backend. */
-function from12h(hour, minute, meridiem) {
-  let h = parseInt(hour, 10) % 12;
-  if (meridiem === 'p.m.') h += 12;
-  return `${String(h).padStart(2, '0')}:${minute}`;
-}
-
-function formatHora12(hhmm) {
-  const { hour, minute, meridiem } = to12h(hhmm);
-  return `${hour}:${minute} ${meridiem}`;
-}
-
-/** Hora explícita en 12h (hora + minuto + a.m./p.m.) — sin la ambigüedad del <input type="time">. */
-function TimeField12h({ value, onChange }) {
-  const { hour, minute, meridiem } = to12h(value);
-  const update = (nextHour, nextMinute, nextMeridiem) => onChange(from12h(nextHour, nextMinute, nextMeridiem));
-
-  return (
-    <div className="flex items-center gap-1">
-      <select
-        value={hour}
-        onChange={(e) => update(e.target.value, minute, meridiem)}
-        className="rounded-lg border border-[#E2E8F0] px-1.5 py-1.5 text-[13.5px] font-semibold text-[#1E293B] outline-none"
-      >
-        {HOURS_12.map((h) => (
-          <option key={h} value={h}>
-            {h}
-          </option>
-        ))}
-      </select>
-      <span className="text-[#94A3B8]">:</span>
-      <select
-        value={minute}
-        onChange={(e) => update(hour, e.target.value, meridiem)}
-        className="rounded-lg border border-[#E2E8F0] px-1.5 py-1.5 text-[13.5px] font-semibold text-[#1E293B] outline-none"
-      >
-        {MINUTES_5.map((m) => (
-          <option key={m} value={m}>
-            {m}
-          </option>
-        ))}
-      </select>
-      <select
-        value={meridiem}
-        onChange={(e) => update(hour, minute, e.target.value)}
-        className="rounded-lg border border-[#E2E8F0] px-1.5 py-1.5 text-[13.5px] font-bold text-[#1E293B] outline-none"
-      >
-        <option value="a.m.">a.m.</option>
-        <option value="p.m.">p.m.</option>
-      </select>
-    </div>
-  );
-}
 
 /**
  * Formulario de grupo — se usa tanto para crear (sin `groupId`) como para
@@ -98,6 +35,11 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const isEditMode = !!groupId;
+
+  const [centros, setCentros] = useState([]);
+  // El centro no se puede cambiar una vez creado el grupo (editar mantiene el de la URL);
+  // al crear, arranca con el centro desde el que se entró pero se puede elegir otro.
+  const [selectedCentroId, setSelectedCentroId] = useState(centroEducativoId ?? '');
 
   const [seccion, setSeccion] = useState('');
   const [materia, setMateria] = useState('');
@@ -114,11 +56,11 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
   const [error, setError] = useState('');
 
   const [periodosDisponibles, setPeriodosDisponibles] = useState(null); // null = cargando
-  const [seleccion, setSeleccion] = useState({}); // { [periodoId]: { fechaInicio, fechaFin } }
+  const [seleccion, setSeleccion] = useState({}); // { [periodoId]: { fechaInicio, fechaFin, totalLecciones } }
   const [seleccionInicial, setSeleccionInicial] = useState({}); // snapshot al cargar (para el diff en editar)
-  const [periodosNuevosLocal, setPeriodosNuevosLocal] = useState([]); // [{tempId, nombre, fechaInicio, fechaFin}]
+  const [periodosNuevosLocal, setPeriodosNuevosLocal] = useState([]); // [{tempId, nombre, fechaInicio, fechaFin, totalLecciones}]
   const [showNuevoPeriodo, setShowNuevoPeriodo] = useState(false);
-  const [nuevoPeriodoForm, setNuevoPeriodoForm] = useState({ nombre: '', fechaInicio: '', fechaFin: '' });
+  const [nuevoPeriodoForm, setNuevoPeriodoForm] = useState({ nombre: '', fechaInicio: '', fechaFin: '', totalLecciones: '' });
   const [periodoError, setPeriodoError] = useState('');
 
   useEffect(() => {
@@ -127,6 +69,12 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
       setTemplates(mapped);
       if (!isEditMode) setTemplateId((prev) => prev ?? mapped[0]?.id ?? null);
     });
+  }, [isEditMode]);
+
+  // El centro no se puede cambiar editando (ya lo trae fijo la URL) — solo hace falta la lista al crear.
+  useEffect(() => {
+    if (isEditMode) return;
+    centrosEducativosService.listMios().then(setCentros);
   }, [isEditMode]);
 
   useEffect(() => {
@@ -156,13 +104,24 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
         const nextSchedule = emptySchedule();
         for (const h of grupo.horarios ?? []) {
           const key = DAY_BY_BACKEND[h.diaSemana];
-          if (key) nextSchedule[key] = { enabled: true, from: h.horaInicio, to: h.horaFin };
+          // El backend devuelve horas de columnas TIME como "HH:MM:SS" — si el
+          // profesor no toca ese día en el picker, se manda tal cual al guardar
+          // y el backend lo rechaza (exige "HH:MM" exacto, sin segundos).
+          if (key)
+            nextSchedule[key] = {
+              enabled: true,
+              from: (h.horaInicio ?? '').slice(0, 5),
+              to: (h.horaFin ?? '').slice(0, 5),
+            };
         }
         setSchedule(nextSchedule);
 
         setPeriodosDisponibles(disponibles);
         const inicial = Object.fromEntries(
-          asociados.map((p) => [p.id, { fechaInicio: p.fechaInicio, fechaFin: p.fechaFin }]),
+          asociados.map((p) => [
+            p.id,
+            { fechaInicio: p.fechaInicio, fechaFin: p.fechaFin, totalLecciones: p.totalLecciones ?? '' },
+          ]),
         );
         setSeleccion(inicial);
         setSeleccionInicial(inicial);
@@ -190,7 +149,11 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
       if (next[periodo.id]) {
         delete next[periodo.id];
       } else {
-        next[periodo.id] = { fechaInicio: periodo.fechaInicio ?? '', fechaFin: periodo.fechaFin ?? '' };
+        next[periodo.id] = {
+          fechaInicio: periodo.fechaInicio ?? '',
+          fechaFin: periodo.fechaFin ?? '',
+          totalLecciones: periodo.totalLecciones ?? '',
+        };
       }
       return next;
     });
@@ -206,7 +169,7 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
       return;
     }
     setPeriodosNuevosLocal((prev) => [...prev, { tempId: `tmp-${Date.now()}`, ...nuevoPeriodoForm }]);
-    setNuevoPeriodoForm({ nombre: '', fechaInicio: '', fechaFin: '' });
+    setNuevoPeriodoForm({ nombre: '', fechaInicio: '', fechaFin: '', totalLecciones: '' });
     setShowNuevoPeriodo(false);
   };
   const handleQuitarPeriodoNuevo = (tempId) =>
@@ -214,7 +177,7 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isEditMode && !templateId) return;
+    if (!isEditMode && (!templateId || !selectedCentroId)) return;
     if (necesitaPeriodo || !totalPeriodos || seleccionIncompleta) return;
     setError('');
     setIsSubmitting(true);
@@ -246,6 +209,7 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
             periodoLectivoId: Number(periodoId),
             fechaInicio: fechas.fechaInicio,
             fechaFin: fechas.fechaFin,
+            totalLecciones: Number(fechas.totalLecciones) || undefined,
           });
         }
         for (const p of periodosNuevosLocal) {
@@ -254,6 +218,7 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
             anioLectivo: Number(anioLectivo),
             fechaInicio: p.fechaInicio,
             fechaFin: p.fechaFin,
+            totalLecciones: Number(p.totalLecciones) || undefined,
           });
         }
 
@@ -261,7 +226,7 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
         navigate(`/inicio/${centroEducativoId}/grupos/${groupId}`);
       } else {
         const grupo = await gruposService.create({
-          centroEducativoId: Number(centroEducativoId),
+          centroEducativoId: Number(selectedCentroId),
           seccion,
           materia,
           color,
@@ -274,16 +239,18 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
             periodoLectivoId: Number(periodoLectivoId),
             fechaInicio: fechas.fechaInicio,
             fechaFin: fechas.fechaFin,
+            totalLecciones: Number(fechas.totalLecciones) || undefined,
           })),
           periodosNuevos: periodosNuevosLocal.map((p) => ({
             nombre: p.nombre,
             anioLectivo: Number(anioLectivo),
             fechaInicio: p.fechaInicio,
             fechaFin: p.fechaFin,
+            totalLecciones: Number(p.totalLecciones) || undefined,
           })),
         });
         showToast('Grupo creado');
-        navigate(`/inicio/${centroEducativoId}/grupos/${grupo.id}`);
+        navigate(`/inicio/${selectedCentroId}/grupos/${grupo.id}`);
       }
     } catch (err) {
       setError(err.message);
@@ -299,6 +266,27 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-wrap items-start gap-[18px]">
       <div className="flex-[2] min-w-[300px] rounded-2xl border border-[#EEF1F6] bg-white p-5 sm:p-6">
+        {!isEditMode && (
+          <div className="mb-5">
+            <label className="mb-2 block text-[13px] font-bold text-[#475569]">Centro educativo</label>
+            <select
+              required
+              value={selectedCentroId}
+              onChange={(e) => setSelectedCentroId(e.target.value)}
+              className="w-full rounded-[11px] border border-[#E2E8F0] px-3.5 py-3 text-[14.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)]"
+            >
+              <option value="" disabled>
+                Selecciona un centro educativo
+              </option>
+              {centros.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="mb-5 flex gap-3">
           <div className="flex-1">
             <label className="mb-2 block text-[13px] font-bold text-[#475569]">Sección</label>
@@ -374,6 +362,17 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
                             onChange={(e) => setFechaSeleccion(p.id, 'fechaFin', e.target.value)}
                             className="rounded-lg border border-[#E2E8F0] px-2.5 py-1.5 text-[12.5px] font-semibold text-[#1E293B] outline-none"
                           />
+                          <label className="flex items-center gap-1.5 text-[12px] font-semibold text-[#64748B]">
+                            Total de lecciones
+                            <input
+                              type="number"
+                              min="1"
+                              placeholder="opcional"
+                              value={seleccion[p.id].totalLecciones}
+                              onChange={(e) => setFechaSeleccion(p.id, 'totalLecciones', e.target.value)}
+                              className="w-[84px] rounded-lg border border-[#E2E8F0] px-2.5 py-1.5 text-[12.5px] font-semibold text-[#1E293B] outline-none"
+                            />
+                          </label>
                         </div>
                       )}
                     </div>
@@ -388,7 +387,8 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
                     <div>
                       <div className="text-[13.5px] font-bold text-[#1E293B]">{p.nombre}</div>
                       <div className="text-[12px] font-semibold text-[#64748B]">
-                        {p.fechaInicio} a {p.fechaFin} · privado de este grupo
+                        {p.fechaInicio} a {p.fechaFin}
+                        {p.totalLecciones ? ` · ${p.totalLecciones} lecciones` : ''} · privado de este grupo
                       </div>
                     </div>
                     <button
@@ -446,6 +446,14 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
                     value={nuevoPeriodoForm.fechaFin}
                     onChange={(e) => setNuevoPeriodoForm((prev) => ({ ...prev, fechaFin: e.target.value }))}
                     className="rounded-lg border border-[#E2E8F0] px-3 py-2 text-[13px] font-semibold text-[#1E293B] outline-none"
+                  />
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="Total de lecciones (opcional)"
+                    value={nuevoPeriodoForm.totalLecciones}
+                    onChange={(e) => setNuevoPeriodoForm((prev) => ({ ...prev, totalLecciones: e.target.value }))}
+                    className="w-[190px] rounded-lg border border-[#E2E8F0] px-3 py-2 text-[13px] font-semibold text-[#1E293B] outline-none"
                   />
                 </div>
                 {periodoError && <div className="mb-2 text-[12.5px] font-bold text-[#DC2626]">{periodoError}</div>}
@@ -659,7 +667,13 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
 
         <button
           type="submit"
-          disabled={isSubmitting || (!isEditMode && !template) || necesitaPeriodo || !totalPeriodos || seleccionIncompleta}
+          disabled={
+            isSubmitting ||
+            (!isEditMode && (!template || !selectedCentroId)) ||
+            necesitaPeriodo ||
+            !totalPeriodos ||
+            seleccionIncompleta
+          }
           className="press flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--brand)] py-3.5 text-[15px] font-extrabold text-white shadow-[0_12px_26px_-10px_rgba(99,102,241,0.6)] disabled:opacity-60"
         >
           <i className={`ph-bold ${isEditMode ? 'ph-check' : 'ph-plus'} text-[17px]`} />

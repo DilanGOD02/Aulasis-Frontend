@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { gruposService } from '../../services/gruposService';
+import { riesgoService } from '../../services/riesgoService';
+import { useToast } from '../../context/ToastContext';
 
 const SEVERITY = {
   critico: { border: '#DC2626', rowBg: '#FEF2F2', badgeBg: '#DC2626', label: 'CRÍTICO' },
@@ -10,7 +12,9 @@ const SEVERITY = {
 /** One row in the consolidated risk list: student, why they're flagged, and a shortcut to their profile. */
 function RiskStudentCard({ student, highlighted, cardRef }) {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const { border, rowBg, badgeBg, label } = SEVERITY[student.severity];
 
   // /riesgo no informa el centroEducativoId del grupo, así que se resuelve con un
@@ -22,6 +26,18 @@ function RiskStudentCard({ student, highlighted, cardRef }) {
       navigate(`/inicio/${grupo.centroEducativoId}/grupos/${student.groupId}/estudiantes/${student.studentId}`);
     } finally {
       setIsNavigating(false);
+    }
+  };
+
+  const handleEnviarInforme = async () => {
+    setIsSending(true);
+    try {
+      await riesgoService.enviarInforme(student.studentId);
+      showToast('Correo enviado', 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -61,14 +77,29 @@ function RiskStudentCard({ student, highlighted, cardRef }) {
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={handleVerPerfil}
-        disabled={isNavigating}
-        className="press flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[11px] border border-transparent bg-white px-3.5 py-2 text-[13px] font-bold text-[#334155] shadow-sm disabled:opacity-60"
-      >
-        Ver perfil <i className="ph-bold ph-arrow-right text-[13px]" />
-      </button>
+      <div className="flex shrink-0 items-center gap-2">
+        <button
+          type="button"
+          onClick={handleEnviarInforme}
+          disabled={isSending}
+          title="Enviar informe al encargado"
+          className="press flex h-[38px] w-[38px] items-center justify-center rounded-[11px] border border-transparent bg-white text-[#334155] shadow-sm disabled:opacity-60"
+        >
+          {isSending ? (
+            <i className="ph-bold ph-spinner animate-spin text-[15px]" />
+          ) : (
+            <i className="ph-bold ph-envelope-simple text-[15px]" />
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={handleVerPerfil}
+          disabled={isNavigating}
+          className="press flex items-center gap-1.5 whitespace-nowrap rounded-[11px] border border-transparent bg-white px-3.5 py-2 text-[13px] font-bold text-[#334155] shadow-sm disabled:opacity-60"
+        >
+          Ver perfil <i className="ph-bold ph-arrow-right text-[13px]" />
+        </button>
+      </div>
     </div>
   );
 }
