@@ -7,6 +7,7 @@ const DOT_BY_STATUS = { ok: '#16A34A', limit: '#1D4ED8', risk: '#D97706', reprob
  */
 function GradesGlobalTable({ students, periodos }) {
   const templateColumns = `200px repeat(${periodos.length}, 1fr) 110px 104px`;
+  const sinNotas = students.every((s) => periodos.every((p) => s.periodoPromedios?.[p.id] == null));
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-[#EEF1F6] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
@@ -63,6 +64,14 @@ function GradesGlobalTable({ students, periodos }) {
             </div>
           </div>
         ))}
+
+        {sinNotas && (
+          <div className="flex flex-col items-center gap-1.5 border-t border-[#F4F6F9] px-4 py-10 text-center">
+            <i className="ph ph-notebook text-[22px] text-[#CBD5E1]" />
+            <div className="text-[13.5px] font-bold text-[#64748B]">Todavía no hay notas registradas en ningún periodo</div>
+            <div className="text-[12.5px] font-medium text-[#94A3B8]">Cargá notas en un periodo puntual para que aparezcan acá.</div>
+          </div>
+        )}
       </div>
     </div>
   );

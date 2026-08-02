@@ -8,6 +8,8 @@ import {
   exportNotasResumenPdf,
   exportNotasSea,
 } from '../../../utils/exportNotas';
+import { formatDocente } from '../../../utils/exportHeader';
+import { useAuth } from '../../../context/AuthContext';
 
 const OPTIONS = [
   { key: 'pdf-desglosado', label: 'Exportar notas desglosadas PDF', icon: 'ph-file-pdf' },
@@ -26,6 +28,7 @@ function ExportMenu({ group, students }) {
   const [exporting, setExporting] = useState(null);
   const ref = useRef(null);
   const isGlobal = group.modo === 'global';
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!open) return undefined;
@@ -39,17 +42,18 @@ function ExportMenu({ group, students }) {
   const handleSelect = async (key) => {
     setExporting(key);
     try {
+      const docente = formatDocente(user);
       if (isGlobal) {
-        if (key === 'pdf') exportNotasGlobalPdf(group, students);
-        else if (key === 'excel') await exportNotasGlobalExcel(group, students);
+        if (key === 'pdf') await exportNotasGlobalPdf(group, students, docente);
+        else if (key === 'excel') await exportNotasGlobalExcel(group, students, docente);
       } else if (key === 'pdf-desglosado') {
-        exportNotasDesglosadasPdf(group, students);
+        await exportNotasDesglosadasPdf(group, students, docente);
       } else if (key === 'excel-desglosado') {
-        await exportNotasDesglosadasExcel(group, students);
+        await exportNotasDesglosadasExcel(group, students, docente);
       } else if (key === 'pdf-resumen') {
-        exportNotasResumenPdf(group, students);
+        await exportNotasResumenPdf(group, students, docente);
       } else if (key === 'excel-resumen') {
-        await exportNotasResumenExcel(group, students);
+        await exportNotasResumenExcel(group, students, docente);
       } else if (key === 'sea') {
         exportNotasSea(group, students);
       }
@@ -65,9 +69,10 @@ function ExportMenu({ group, students }) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         title="Exportar notas"
-        className="press flex h-9 w-9 items-center justify-center rounded-[11px] border border-[#E8ECF2] bg-white text-[#475569]"
+        className="press flex items-center gap-1.5 rounded-[11px] border border-[#E8ECF2] bg-white px-3.5 py-2 text-[13px] font-bold text-[#475569]"
       >
-        <i className="ph ph-list text-[18px]" />
+        <i className="ph-bold ph-export text-[16px]" />
+        Exportar
       </button>
 
       {open && (

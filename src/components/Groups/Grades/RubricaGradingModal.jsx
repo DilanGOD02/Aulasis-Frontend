@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { rubricasService } from '../../../services/rubricasService';
 import { exportRubricaPdf } from '../../../utils/exportRubrica';
+import { formatDocente } from '../../../utils/exportHeader';
 import { useToast } from '../../../context/ToastContext';
+import { useAuth } from '../../../context/AuthContext';
 
 /**
  * Se abre desde el iconito de un ítem con rúbrica en la grilla de Notas.
@@ -16,12 +18,14 @@ function RubricaGradingModal({
   itemId,
   itemName,
   itemValorMaximo,
+  itemWeight,
   periodoLectivoId,
   studentName,
   onClose,
   onSaved,
 }) {
   const { showToast } = useToast();
+  const { user } = useAuth();
   const [rubrica, setRubrica] = useState(null); // null = cargando
   const [calificaciones, setCalificaciones] = useState({}); // { [indicadorId]: nivelValor }
   const [observacion, setObservacion] = useState('');
@@ -52,8 +56,18 @@ function RubricaGradingModal({
 
   const todosCalificados = rubrica?.indicadores.every((ind) => calificaciones[ind.id] !== undefined);
 
-  const handleExportarPdf = () => {
-    exportRubricaPdf({ group, studentName, itemName, itemValorMaximo, rubrica, calificaciones, observacion });
+  const handleExportarPdf = async () => {
+    await exportRubricaPdf({
+      group,
+      studentName,
+      itemName,
+      itemValorMaximo,
+      itemWeight,
+      rubrica,
+      calificaciones,
+      observacion,
+      docente: formatDocente(user),
+    });
   };
 
   const handleGuardar = async () => {

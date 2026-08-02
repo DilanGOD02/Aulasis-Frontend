@@ -11,6 +11,12 @@ export const centrosEducativosService = {
     return parseJsonOrThrow(response);
   },
 
+  /** Catálogo de modalidades MEP (académico, técnico, CINDEA, etc.) para el combo del formulario. */
+  async listTipos() {
+    const response = await apiFetch('/centros-educativos/tipos');
+    return parseJsonOrThrow(response);
+  },
+
   async create(payload) {
     const response = await apiFetch('/centros-educativos', {
       method: 'POST',

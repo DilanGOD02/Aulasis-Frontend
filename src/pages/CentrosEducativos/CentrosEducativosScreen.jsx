@@ -59,6 +59,14 @@ function CentroCard({ centro, onEliminado }) {
         className="absolute right-3 top-3 z-10 flex items-center gap-1.5"
         onClick={(e) => e.stopPropagation()}
       >
+        {centro.tipoCentroEducativo && !centro.tipoCentroEducativo.esSoportado && (
+          <div
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-[#FFFBEB] text-[#B45309]"
+            title={`${centro.tipoCentroEducativo.nombre} — modalidad todavía en desarrollo`}
+          >
+            <i className="ph-fill ph-flask text-[12px]" />
+          </div>
+        )}
         {centro.estudiantesEnRiesgo > 0 && (
           <div className="flex items-center gap-1 rounded-full bg-[#FEE2E2] px-2.5 py-1 text-[11px] font-extrabold text-[#DC2626]">
             <i className="ph-fill ph-warning text-[12px]" />

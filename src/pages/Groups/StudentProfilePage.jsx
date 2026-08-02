@@ -132,7 +132,7 @@ function StudentProfilePage() {
                   group.modo === 'global' ? 'bg-white text-[#1E293B] shadow-sm' : 'text-[#64748B]'
                 }`}
               >
-                Año completo
+                Anual
               </button>
             )}
           </div>

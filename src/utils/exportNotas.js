@@ -7,6 +7,7 @@ import {
   categoryContributionPct,
   contributionPct,
 } from '../components/Groups/Grades/categories';
+import { drawPdfHeader, drawExcelHeader, drawPdfInfoRow, drawExcelInfoRow } from './exportHeader';
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const DARK = '1E293B';
@@ -98,28 +99,23 @@ function groupAverage(students) {
 // PDF (vertical / portrait) — encabezado con datos del grupo, tabla agrupada
 // por categoría con sus colores, fila de estado coloreada y leyenda al pie.
 // ---------------------------------------------------------------------------
-export function exportNotasDesglosadasPdf(group, students) {
+export async function exportNotasDesglosadasPdf(group, students, docente) {
   const columns = buildGradeColumns(group.evaluationSchema);
   const colByKey = Object.fromEntries(columns.map((c) => [c.key, c]));
   const groups = groupColumnsByCategory(columns);
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const pageWidth = doc.internal.pageSize.getWidth();
-
-  doc.setFillColor(...hexToRgb(DARK));
-  doc.rect(0, 0, pageWidth, 22, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(14);
-  doc.text(`Notas — ${group.name}`, 10, 10);
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  const sub = [group.materia, group.seccion, group.anioLectivo].filter(Boolean).join(' · ');
-  if (sub) doc.text(sub, 10, 17);
+  const offset = await drawPdfHeader(doc, group.centro);
+  const infoY = drawPdfInfoRow(
+    doc,
+    { docente, seccion: group.seccion, materia: group.materia, tipoDocumento: 'Notas desglosadas', anio: group.anioLectivo },
+    offset,
+  );
 
   const dist = statusDistribution(students);
   const avg = groupAverage(students);
   doc.setTextColor(...hexToRgb(DARK));
   doc.setFontSize(9);
-  const summaryY = 28;
+  const summaryY = infoY + 4;
   const summary = [
     `Estudiantes: ${students.length}`,
     `Promedio grupo: ${avg != null ? avg.toFixed(1) : '—'}`,
@@ -208,7 +204,7 @@ export function exportNotasDesglosadasPdf(group, students) {
 // ---------------------------------------------------------------------------
 // Excel — mismo agrupado por categoría con colores + fila de resumen/leyenda.
 // ---------------------------------------------------------------------------
-export async function exportNotasDesglosadasExcel(group, students) {
+export async function exportNotasDesglosadasExcel(group, students, docente) {
   const columns = buildGradeColumns(group.evaluationSchema);
   const colByKey = Object.fromEntries(columns.map((c) => [c.key, c]));
   const groups = groupColumnsByCategory(columns);
@@ -219,26 +215,24 @@ export async function exportNotasDesglosadasExcel(group, students) {
   const ws = wb.addWorksheet('Notas');
 
   const totalCols = 2 + columns.length + 2;
-
-  // Título
-  ws.mergeCells(1, 1, 1, totalCols);
-  const title = ws.getCell(1, 1);
-  const sub = [group.materia, group.seccion, group.anioLectivo].filter(Boolean).join(' · ');
-  title.value = `Notas — ${group.name}${sub ? ' · ' + sub : ''}`;
-  title.font = { size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
-  title.alignment = { horizontal: 'center', vertical: 'middle' };
-  title.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: hexToArgb(DARK) } };
-  ws.getRow(1).height = 24;
+  const rowOffset = await drawExcelHeader(wb, ws, group.centro, totalCols);
+  const infoRows = drawExcelInfoRow(
+    ws,
+    { docente, seccion: group.seccion, materia: group.materia, tipoDocumento: 'Notas desglosadas', anio: group.anioLectivo },
+    1 + rowOffset,
+    totalCols,
+  );
+  const summaryRow = 1 + rowOffset + infoRows;
 
   // Resumen
-  ws.mergeCells(2, 1, 2, totalCols);
-  const summary = ws.getCell(2, 1);
+  ws.mergeCells(summaryRow, 1, summaryRow, totalCols);
+  const summary = ws.getCell(summaryRow, 1);
   summary.value = `Estudiantes: ${students.length}   |   Promedio grupo: ${avg != null ? avg.toFixed(1) : '—'}   |   Aprobados: ${dist.ok ?? 0}   |   Van bien: ${dist.limit ?? 0}   |   En riesgo: ${dist.risk ?? 0}   |   Reprobados: ${dist.reprobado ?? 0}`;
   summary.font = { italic: true, color: { argb: 'FF475569' } };
-  ws.getRow(2).height = 18;
+  ws.getRow(summaryRow).height = 18;
 
-  const headRow1 = 3;
-  const headRow2 = 4;
+  const headRow1 = summaryRow + 1;
+  const headRow2 = summaryRow + 2;
 
   ws.mergeCells(headRow1, 1, headRow2, 1);
   ws.getCell(headRow1, 1).value = 'N.°';
@@ -340,28 +334,23 @@ export async function exportNotasDesglosadasExcel(group, students) {
 // "Resumen" — una sola columna por categoría (su nota final, sin desglose de
 // ítems), para cuando no hace falta ver el detalle ítem por ítem.
 // ---------------------------------------------------------------------------
-export function exportNotasResumenPdf(group, students) {
+export async function exportNotasResumenPdf(group, students, docente) {
   const columns = buildGradeColumns(group.evaluationSchema);
   const colByKey = Object.fromEntries(columns.map((c) => [c.key, c]));
   const categoryColumns = (group.evaluationSchema ?? []).map((cat) => categoryScoreColumn(columns, cat.id)).filter(Boolean);
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const pageWidth = doc.internal.pageSize.getWidth();
-
-  doc.setFillColor(...hexToRgb(DARK));
-  doc.rect(0, 0, pageWidth, 22, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(14);
-  doc.text(`Notas — ${group.name}`, 10, 10);
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  const sub = [group.materia, group.seccion, group.anioLectivo].filter(Boolean).join(' · ');
-  if (sub) doc.text(sub, 10, 17);
+  const offset = await drawPdfHeader(doc, group.centro);
+  const infoY = drawPdfInfoRow(
+    doc,
+    { docente, seccion: group.seccion, materia: group.materia, tipoDocumento: 'Notas', anio: group.anioLectivo },
+    offset,
+  );
 
   const dist = statusDistribution(students);
   const avg = groupAverage(students);
   doc.setTextColor(...hexToRgb(DARK));
   doc.setFontSize(9);
-  const summaryY = 28;
+  const summaryY = infoY + 4;
   const summary = [
     `Estudiantes: ${students.length}`,
     `Promedio grupo: ${avg != null ? avg.toFixed(1) : '—'}`,
@@ -416,7 +405,7 @@ export function exportNotasResumenPdf(group, students) {
   doc.save(`notas_${sanitizeFilename(group.name)}.pdf`);
 }
 
-export async function exportNotasResumenExcel(group, students) {
+export async function exportNotasResumenExcel(group, students, docente) {
   const columns = buildGradeColumns(group.evaluationSchema);
   const colByKey = Object.fromEntries(columns.map((c) => [c.key, c]));
   const categoryColumns = (group.evaluationSchema ?? []).map((cat) => categoryScoreColumn(columns, cat.id)).filter(Boolean);
@@ -427,22 +416,22 @@ export async function exportNotasResumenExcel(group, students) {
   const ws = wb.addWorksheet('Notas');
 
   const totalCols = 2 + categoryColumns.length + 2;
-  ws.mergeCells(1, 1, 1, totalCols);
-  const title = ws.getCell(1, 1);
-  const sub = [group.materia, group.seccion, group.anioLectivo].filter(Boolean).join(' · ');
-  title.value = `Notas — ${group.name}${sub ? ' · ' + sub : ''}`;
-  title.font = { size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
-  title.alignment = { horizontal: 'center', vertical: 'middle' };
-  title.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: hexToArgb(DARK) } };
-  ws.getRow(1).height = 24;
+  const rowOffset = await drawExcelHeader(wb, ws, group.centro, totalCols);
+  const infoRows = drawExcelInfoRow(
+    ws,
+    { docente, seccion: group.seccion, materia: group.materia, tipoDocumento: 'Notas', anio: group.anioLectivo },
+    1 + rowOffset,
+    totalCols,
+  );
+  const summaryRow = 1 + rowOffset + infoRows;
 
-  ws.mergeCells(2, 1, 2, totalCols);
-  const summary = ws.getCell(2, 1);
+  ws.mergeCells(summaryRow, 1, summaryRow, totalCols);
+  const summary = ws.getCell(summaryRow, 1);
   summary.value = `Estudiantes: ${students.length}   |   Promedio grupo: ${avg != null ? avg.toFixed(1) : '—'}   |   Aprobados: ${dist.ok ?? 0}   |   Van bien: ${dist.limit ?? 0}   |   En riesgo: ${dist.risk ?? 0}   |   Reprobados: ${dist.reprobado ?? 0}`;
   summary.font = { italic: true, color: { argb: 'FF475569' } };
-  ws.getRow(2).height = 18;
+  ws.getRow(summaryRow).height = 18;
 
-  const headRow = 3;
+  const headRow = summaryRow + 1;
   ws.columns = [
     { key: 'n', width: 6 },
     { key: 'name', width: 28 },
@@ -568,26 +557,21 @@ export function exportNotasSea(group, students) {
 // "Año completo" — una columna por periodo (nota ya obtenida ahí) + nota final.
 // Vista de solo lectura, sin desglose por ítem (igual que GradesGlobalTable).
 // ---------------------------------------------------------------------------
-export function exportNotasGlobalPdf(group, students) {
+export async function exportNotasGlobalPdf(group, students, docente) {
   const periodos = group.periodos ?? [];
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const pageWidth = doc.internal.pageSize.getWidth();
-
-  doc.setFillColor(...hexToRgb(DARK));
-  doc.rect(0, 0, pageWidth, 22, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(14);
-  doc.text(`Notas — Año completo — ${group.name}`, 10, 10);
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  const sub = [group.materia, group.seccion, group.anioLectivo].filter(Boolean).join(' · ');
-  if (sub) doc.text(sub, 10, 17);
+  const offset = await drawPdfHeader(doc, group.centro);
+  const infoY = drawPdfInfoRow(
+    doc,
+    { docente, seccion: group.seccion, materia: group.materia, tipoDocumento: 'Notas — Año completo', anio: group.anioLectivo },
+    offset,
+  );
 
   const dist = statusDistribution(students);
   const avg = groupAverage(students);
   doc.setTextColor(...hexToRgb(DARK));
   doc.setFontSize(9);
-  const summaryY = 28;
+  const summaryY = infoY + 4;
   const summary = [
     `Estudiantes: ${students.length}`,
     `Promedio grupo: ${avg != null ? avg.toFixed(1) : '—'}`,
@@ -637,7 +621,7 @@ export function exportNotasGlobalPdf(group, students) {
   doc.save(`notas_anio_completo_${sanitizeFilename(group.name)}.pdf`);
 }
 
-export async function exportNotasGlobalExcel(group, students) {
+export async function exportNotasGlobalExcel(group, students, docente) {
   const periodos = group.periodos ?? [];
   const dist = statusDistribution(students);
   const avg = groupAverage(students);
@@ -646,20 +630,20 @@ export async function exportNotasGlobalExcel(group, students) {
   const ws = wb.addWorksheet('Año completo');
 
   const totalCols = 2 + periodos.length + 2;
-  ws.mergeCells(1, 1, 1, totalCols);
-  const title = ws.getCell(1, 1);
-  const sub = [group.materia, group.seccion, group.anioLectivo].filter(Boolean).join(' · ');
-  title.value = `Notas — Año completo — ${group.name}${sub ? ' · ' + sub : ''}`;
-  title.font = { size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
-  title.alignment = { horizontal: 'center', vertical: 'middle' };
-  title.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: hexToArgb(DARK) } };
-  ws.getRow(1).height = 24;
+  const rowOffset = await drawExcelHeader(wb, ws, group.centro, totalCols);
+  const infoRows = drawExcelInfoRow(
+    ws,
+    { docente, seccion: group.seccion, materia: group.materia, tipoDocumento: 'Notas — Año completo', anio: group.anioLectivo },
+    1 + rowOffset,
+    totalCols,
+  );
+  const summaryRow = 1 + rowOffset + infoRows;
 
-  ws.mergeCells(2, 1, 2, totalCols);
-  const summary = ws.getCell(2, 1);
+  ws.mergeCells(summaryRow, 1, summaryRow, totalCols);
+  const summary = ws.getCell(summaryRow, 1);
   summary.value = `Estudiantes: ${students.length}   |   Promedio grupo: ${avg != null ? avg.toFixed(1) : '—'}   |   Aprobados: ${dist.ok ?? 0}   |   Van bien: ${dist.limit ?? 0}   |   En riesgo: ${dist.risk ?? 0}   |   Reprobados: ${dist.reprobado ?? 0}`;
   summary.font = { italic: true, color: { argb: 'FF475569' } };
-  ws.getRow(2).height = 18;
+  ws.getRow(summaryRow).height = 18;
 
   ws.columns = [
     { key: 'n', width: 6 },
@@ -669,7 +653,8 @@ export async function exportNotasGlobalExcel(group, students) {
     { key: 'estado', width: 14 },
   ];
 
-  const headRow = ws.getRow(3);
+  const headRowNum = summaryRow + 1;
+  const headRow = ws.getRow(headRowNum);
   const headers = ['N.°', 'Estudiante', ...periodos.map((p) => p.nombre), 'Nota final', 'Estado'];
   headers.forEach((h, idx) => {
     const cell = headRow.getCell(idx + 1);
@@ -680,7 +665,7 @@ export async function exportNotasGlobalExcel(group, students) {
   });
 
   students.forEach((s, idx) => {
-    const r = 3 + 1 + idx;
+    const r = headRowNum + 1 + idx;
     ws.getCell(r, 1).value = idx + 1;
     ws.getCell(r, 2).value = s.name;
     periodos.forEach((p, pIdx) => {
@@ -700,9 +685,9 @@ export async function exportNotasGlobalExcel(group, students) {
     estadoCell.alignment = { horizontal: 'center' };
   });
 
-  const lastRow = 4 + students.length;
+  const lastRow = headRowNum + 1 + students.length;
   const lastCol = 4 + periodos.length;
-  for (let r = 3; r <= lastRow; r += 1) {
+  for (let r = headRowNum; r <= lastRow; r += 1) {
     for (let c = 1; c <= lastCol; c += 1) {
       ws.getCell(r, c).border = {
         top: { style: 'thin', color: { argb: 'FF000000' } },

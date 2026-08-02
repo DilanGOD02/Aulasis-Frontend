@@ -19,14 +19,23 @@ function CreateCentroEducativoForm({ centroId }) {
   const [nombre, setNombre] = useState('');
   const [correo, setCorreo] = useState('');
   const [direccion, setDireccion] = useState('');
+  const [direccionRegional, setDireccionRegional] = useState('');
   const [codigoPresupuestario, setCodigoPresupuestario] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [tipo, setTipo] = useState('publica');
+  const [tipoCentroEducativoId, setTipoCentroEducativoId] = useState('');
+  const [tiposCentro, setTiposCentro] = useState([]);
   const [color, setColor] = useState(COLORS[0]);
   const [escudoUrl, setEscudoUrl] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingInitial, setIsLoadingInitial] = useState(isEditMode);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    centrosEducativosService.listTipos().then((tipos) => {
+      setTiposCentro(tipos);
+      setTipoCentroEducativoId((prev) => prev || tipos[0]?.id || '');
+    });
+  }, []);
 
   useEffect(() => {
     if (!isEditMode) return;
@@ -37,14 +46,17 @@ function CreateCentroEducativoForm({ centroId }) {
         setNombre(centro.nombre ?? '');
         setCorreo(centro.correo ?? '');
         setDireccion(centro.direccion ?? '');
+        setDireccionRegional(centro.direccionRegional ?? '');
         setCodigoPresupuestario(centro.codigoPresupuestario ?? '');
         setTelefono(centro.telefono ?? '');
-        setTipo(centro.tipo ?? 'publica');
+        setTipoCentroEducativoId(centro.tipoCentroEducativoId ?? '');
         setColor(centro.color ?? COLORS[0]);
         setEscudoUrl(centro.escudoUrl ?? null);
       })
       .finally(() => setIsLoadingInitial(false));
   }, [isEditMode, centroId]);
+
+  const tipoCentroSeleccionado = tiposCentro.find((t) => t.id === Number(tipoCentroEducativoId));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,12 +65,13 @@ function CreateCentroEducativoForm({ centroId }) {
     try {
       const payload = {
         nombre,
+        tipoCentroEducativoId: Number(tipoCentroEducativoId),
         escudoUrl: escudoUrl || undefined,
         correo: correo || undefined,
         direccion: direccion || undefined,
+        direccionRegional: direccionRegional || undefined,
         codigoPresupuestario: codigoPresupuestario || undefined,
         telefono: telefono || undefined,
-        tipo: tipo || undefined,
         color,
       };
 
@@ -128,36 +141,58 @@ function CreateCentroEducativoForm({ centroId }) {
           </div>
         </div>
 
-        <div className="mb-4">
-          <label className="mb-2 block text-[13px] font-bold text-[#475569]">Dirección</label>
-          <input
-            value={direccion}
-            onChange={(e) => setDireccion(e.target.value)}
-            placeholder="Dirección exacta"
-            className="w-full rounded-[11px] border border-[#E2E8F0] px-3.5 py-3 text-[14.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)]"
-          />
-        </div>
-
-        <div className="mb-5 flex gap-3">
+        <div className="mb-4 flex gap-3">
           <div className="flex-1">
-            <label className="mb-2 block text-[13px] font-bold text-[#475569]">Código presupuestario</label>
+            <label className="mb-2 block text-[13px] font-bold text-[#475569]">Dirección</label>
             <input
-              value={codigoPresupuestario}
-              onChange={(e) => setCodigoPresupuestario(e.target.value)}
+              value={direccion}
+              onChange={(e) => setDireccion(e.target.value)}
+              placeholder="Dirección exacta"
               className="w-full rounded-[11px] border border-[#E2E8F0] px-3.5 py-3 text-[14.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)]"
             />
           </div>
-          <div className="w-[160px] shrink-0">
-            <label className="mb-2 block text-[13px] font-bold text-[#475569]">Tipo</label>
-            <select
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value)}
+          <div className="flex-1">
+            <label className="mb-2 block text-[13px] font-bold text-[#475569]">Dirección Regional (MEP)</label>
+            <input
+              value={direccionRegional}
+              onChange={(e) => setDireccionRegional(e.target.value)}
+              placeholder="Ej. Dirección Regional de Coto"
               className="w-full rounded-[11px] border border-[#E2E8F0] px-3.5 py-3 text-[14.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)]"
-            >
-              <option value="publica">Pública</option>
-              <option value="privada">Privada</option>
-            </select>
+            />
           </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="mb-2 block text-[13px] font-bold text-[#475569]">Modalidad del centro (MEP)</label>
+          <select
+            required
+            value={tipoCentroEducativoId}
+            onChange={(e) => setTipoCentroEducativoId(e.target.value)}
+            className="w-full rounded-[11px] border border-[#E2E8F0] px-3.5 py-3 text-[14.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)]"
+          >
+            {tiposCentro.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.nombre}
+                {!t.esSoportado ? ' (en desarrollo)' : ''}
+              </option>
+            ))}
+          </select>
+          {tipoCentroSeleccionado && !tipoCentroSeleccionado.esSoportado && (
+            <p className="mt-2 flex items-start gap-1.5 rounded-[10px] bg-[#FFFBEB] px-3 py-2.5 text-[12px] font-semibold leading-relaxed text-[#B45309]">
+              <i className="ph-fill ph-info mt-[1px] shrink-0 text-[14px]" />
+              Esta modalidad todavía está en desarrollo — estamos afinando sus reglas de evaluación junto con
+              profesores de este tipo de centro, así que algunas funciones pueden no aplicar todavía.
+            </p>
+          )}
+        </div>
+
+        <div className="mb-5">
+          <label className="mb-2 block text-[13px] font-bold text-[#475569]">Código presupuestario</label>
+          <input
+            value={codigoPresupuestario}
+            onChange={(e) => setCodigoPresupuestario(e.target.value)}
+            className="w-full rounded-[11px] border border-[#E2E8F0] px-3.5 py-3 text-[14.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)]"
+          />
         </div>
 
         <label className="mb-1 block text-[13px] font-bold text-[#475569]">Color identificador del centro</label>
@@ -194,7 +229,9 @@ function CreateCentroEducativoForm({ centroId }) {
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[15px] font-extrabold text-[#0F172A]">{nombre || 'Nombre del centro'}</div>
-              <div className="text-[12.5px] font-semibold text-[#94A3B8]">{tipo === 'privada' ? 'Privada' : 'Pública'}</div>
+              <div className="text-[12.5px] font-semibold text-[#94A3B8]">
+                {tipoCentroSeleccionado?.nombre ?? 'Modalidad del centro'}
+              </div>
             </div>
           </div>
         </div>

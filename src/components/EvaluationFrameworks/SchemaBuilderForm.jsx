@@ -1,5 +1,11 @@
 import { useState } from 'react';
 import RubricaDesignerModal from './RubricaDesignerModal';
+import { tieneFeature } from '../../utils/centerTypeFeatures';
+
+const ETAPAS_ACADEMICO = [
+  { notaMinima: 65, label: 'Tercer Ciclo', sub: '7.° a 9.° año · 65%' },
+  { notaMinima: 70, label: 'Educación Diversificada', sub: '10.° a 11.° año · 70%' },
+];
 
 // Soft pastel tones — same spirit as the attendance status cards, not the vivid brand palette.
 const DOT_COLORS = ['#A5B4FC', '#7DD3FC', '#FCD34D', '#F9A8D4', '#C4B5FD', '#86EFAC'];
@@ -44,6 +50,8 @@ function SchemaBuilderForm({
   showNameField = false,
   templateName = '',
   onTemplateNameChange,
+  initialNotaMinimaAprobar = 70,
+  tipoCentroEducativoClave,
   onSave,
 }) {
   const [categories, setCategories] = useState(() => initialCategories.map((c) => ({ ...c })));
@@ -51,6 +59,8 @@ function SchemaBuilderForm({
     () => new Set(initialCategories.filter((c) => c.items.length).map((c) => c.id)),
   );
   const [rubricaAbierta, setRubricaAbierta] = useState(null); // { categoryId, itemId, itemNombre } | null
+  const [notaMinimaAprobar, setNotaMinimaAprobar] = useState(initialNotaMinimaAprobar);
+  const notaMinimaPorEtapa = tieneFeature(tipoCentroEducativoClave, 'notaMinimaPorEtapa');
 
   const total = categories.reduce((sum, c) => sum + Number(c.weight || 0), 0);
   const isComplete = total === 100;
@@ -324,6 +334,35 @@ function SchemaBuilderForm({
             ))}
           </div>
 
+          {notaMinimaPorEtapa && (
+            <div className="mt-4 border-t border-[#F1F4F8] pt-4">
+              <div className="flex items-center justify-between">
+                <div className="text-[11.5px] font-extrabold uppercase tracking-wider text-[#94A3B8]">
+                  Nota mínima para aprobar
+                </div>
+                <div className="text-[15px] font-extrabold text-[var(--brand)]">{notaMinimaAprobar}%</div>
+              </div>
+              <div className="mt-2 flex gap-1.5">
+                {ETAPAS_ACADEMICO.map((etapa) => {
+                  const isActive = notaMinimaAprobar === etapa.notaMinima;
+                  return (
+                    <button
+                      key={etapa.notaMinima}
+                      type="button"
+                      onClick={() => setNotaMinimaAprobar(etapa.notaMinima)}
+                      title={etapa.sub}
+                      className={`press flex-1 rounded-[9px] px-2 py-1.5 text-[11.5px] font-bold ${
+                        isActive ? 'bg-[var(--brand)] text-white' : 'bg-[#F5F7FA] text-[#64748B]'
+                      }`}
+                    >
+                      {etapa.label} · {etapa.notaMinima}%
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div
             className="mt-4 flex items-center gap-2 rounded-[11px] px-3.5 py-2.5 text-[13px] font-bold"
             style={{ background: canSave ? '#F0FDF4' : '#FEF2F2', color: canSave ? '#15803D' : '#DC2626' }}
@@ -338,7 +377,7 @@ function SchemaBuilderForm({
 
           <button
             type="button"
-            onClick={() => canSave && onSave?.(categories, templateName)}
+            onClick={() => canSave && onSave?.(categories, templateName, notaMinimaAprobar)}
             disabled={!canSave}
             title={!canSave ? 'Corregí los pesos antes de guardar' : undefined}
             className="press mt-4 flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--brand)] py-3 text-[14.5px] font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-50"

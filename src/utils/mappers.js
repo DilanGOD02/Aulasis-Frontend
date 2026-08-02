@@ -77,6 +77,15 @@ export function mapGrupoDetail(g) {
     color: g.color ?? '#6366F1',
     logoUrl: g.logoUrl ?? null,
     centroEducativoId: g.centroEducativoId ?? null,
+    // Modalidad MEP del centro dueño del grupo — para gatear tabs/funciones
+    // específicas por tipo, ver utils/centerTypeFeatures.js.
+    tipoCentroEducativoClave: g.tipoCentroEducativoClave ?? null,
+    // Datos institucionales del centro — para el encabezado de los exportables, ver utils/exportHeader.js.
+    centro: g.centro ?? null,
+    // Grupos de escuela (I/II Ciclo) — varias materias en el mismo grupo, ver
+    // centerTypeFeatures.js#materiasMultiples. Vacío para el resto de tipos.
+    materias: g.materias ?? [],
+    materiaSeleccionadaId: g.materiaSeleccionadaId ?? null,
     esquemaEvaluacionId: g.esquemaEvaluacionId,
     anioLectivo: g.anioLectivo,
     minutosPorLeccion: g.minutosPorLeccion ?? 40,
@@ -94,6 +103,7 @@ export function mapGrupoDetail(g) {
     horarios: g.horarios ?? [],
     students: (g.students ?? []).map(mapEstudiante),
     evaluationSchema: (g.evaluationSchema ?? []).map(mapEsquemaCategoria),
+    notaMinimaAprobar: g.notaMinimaAprobar ?? 70,
   };
 }
 
@@ -104,6 +114,7 @@ export function mapEsquemaDetail(e) {
     name: e.nombre,
     esOficial: !!e.esOficial,
     categories: (e.categorias ?? []).map(mapEsquemaCategoria),
+    notaMinimaAprobar: e.notaMinimaAprobar ?? 70,
   };
 }
 
@@ -162,9 +173,10 @@ export function mapRiesgoEstudiante(r) {
  * Los ids positivos (ya existen en la BD) se mandan para que el backend actualice ese mismo
  * registro en vez de recrearlo — así no se pierden las rúbricas atadas a un item. Los ids
  * negativos (creados en esta sesión de edición, todavía no guardados) se omiten. */
-export function toEsquemaPayload(categories, nombre) {
+export function toEsquemaPayload(categories, nombre, notaMinimaAprobar) {
   return {
     nombre,
+    notaMinimaAprobar,
     categorias: categories.map((c) => ({
       id: c.id > 0 ? c.id : undefined,
       nombre: c.name,

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { exportAttendanceExcel, exportAttendancePdf } from '../../../utils/exportAttendance';
+import { formatDocente } from '../../../utils/exportHeader';
+import { useAuth } from '../../../context/AuthContext';
 
 const OPTIONS = [
   { key: 'pdf', label: 'Exportar asistencia PDF', icon: 'ph-file-pdf' },
@@ -11,6 +13,7 @@ function AttendanceExportMenu({ group, fecha, students, statusById }) {
   const [open, setOpen] = useState(false);
   const [exporting, setExporting] = useState(null);
   const ref = useRef(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!open) return undefined;
@@ -24,8 +27,9 @@ function AttendanceExportMenu({ group, fecha, students, statusById }) {
   const handleSelect = async (key) => {
     setExporting(key);
     try {
-      if (key === 'pdf') exportAttendancePdf(group, fecha, students, statusById);
-      else if (key === 'excel') await exportAttendanceExcel(group, fecha, students, statusById);
+      const docente = formatDocente(user);
+      if (key === 'pdf') await exportAttendancePdf(group, fecha, students, statusById, docente);
+      else if (key === 'excel') await exportAttendanceExcel(group, fecha, students, statusById, docente);
     } finally {
       setExporting(null);
       setOpen(false);
@@ -38,9 +42,10 @@ function AttendanceExportMenu({ group, fecha, students, statusById }) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         title="Exportar asistencia"
-        className="press flex h-9 w-9 items-center justify-center rounded-[11px] border border-[#E8ECF2] bg-white text-[#475569]"
+        className="press flex items-center gap-1.5 rounded-[11px] border border-[#E8ECF2] bg-white px-3.5 py-2 text-[13px] font-bold text-[#475569]"
       >
-        <i className="ph ph-list text-[18px]" />
+        <i className="ph-bold ph-export text-[16px]" />
+        Exportar
       </button>
 
       {open && (

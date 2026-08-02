@@ -23,6 +23,7 @@ import StudentsTab from '../pages/Groups/tabs/StudentsTab';
 import GradesTab from '../pages/Groups/tabs/GradesTab';
 import AttendanceTab from '../pages/Groups/tabs/AttendanceTab';
 import EvaluationFrameworkTab from '../pages/Groups/tabs/EvaluationFrameworkTab';
+import TvSessionsTab from '../pages/Groups/tabs/TvSessionsTab';
 import AdminTeachersPage from '../pages/Admin/AdminTeachersPage';
 import AdminRoute from './AdminRoute';
 
@@ -73,6 +74,7 @@ function AppRouter() {
                 <Route path="notas" element={<GradesTab />} />
                 <Route path="asistencia" element={<AttendanceTab />} />
                 <Route path="esquema" element={<EvaluationFrameworkTab />} />
+                <Route path="sesiones-tv" element={<TvSessionsTab />} />
               </Route>
             </Route>
           </Route>

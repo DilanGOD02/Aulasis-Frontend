@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { gruposService } from '../../services/gruposService';
 import { useConfirm } from '../../context/ConfirmContext';
 import { useToast } from '../../context/ToastContext';
+import { tieneFeature } from '../../utils/centerTypeFeatures';
 
 /**
  * Page header for every group-scoped screen: a gradient identity banner
@@ -66,12 +67,27 @@ function GroupPageHeader({ group, onRecalculado }) {
           <i className="ph-bold ph-arrow-left text-[18px]" />
         </button>
 
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] bg-white/20">
+        <button
+          type="button"
+          onClick={() => navigate(`/inicio/${centroId}`)}
+          title="Volver a grupos"
+          className="press flex h-11 shrink-0 items-center gap-1.5 rounded-[13px] bg-white/20 px-2.5"
+        >
           <i className="ph-fill ph-graduation-cap text-[22px]" />
-        </div>
+          <span className="hidden whitespace-nowrap text-[11px] font-extrabold sm:inline">Volver a grupos</span>
+        </button>
 
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[18px] font-extrabold tracking-tight sm:text-[20px]">{group.name}</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="truncate text-[18px] font-extrabold tracking-tight sm:text-[20px]">{group.name}</div>
+            {/* EJEMPLO: badge exclusivo de telesecundaria — ver utils/centerTypeFeatures.js. */}
+            {tieneFeature(group.tipoCentroEducativoClave, 'bannerModalidad') && (
+              <span className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-extrabold">
+                <i className="ph-fill ph-television text-[12px]" />
+                Telesecundaria
+              </span>
+            )}
+          </div>
           <div className="truncate text-[13px] font-medium opacity-90">{group.sub}</div>
         </div>
 

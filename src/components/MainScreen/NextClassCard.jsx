@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { FONT } from '../Globales/colors';
 
 /** Gradient hero card promoting the next class's quick attendance flow. */
-function NextClassCard({ time, groupLabel }) {
+function NextClassCard({ time, groupLabel, centroId }) {
   const navigate = useNavigate();
 
   return (
@@ -35,11 +35,11 @@ function NextClassCard({ time, groupLabel }) {
           </button>
           <button
             type="button"
-            onClick={() => navigate('/asistencia')}
+            onClick={() => navigate(`/inicio/${centroId}/grupos/crear`)}
             className="press flex items-center gap-2 rounded-xl border border-white/25 bg-white/15 px-4 py-3 text-[14.5px] font-bold text-white"
           >
-            <i className="ph ph-qr-code text-[17px]" />
-            Escanear QR
+            <i className="ph-bold ph-plus text-[17px]" />
+            Crear grupo
           </button>
         </div>
       </div>

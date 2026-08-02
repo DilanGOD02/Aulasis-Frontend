@@ -3,6 +3,7 @@ import autoTable from 'jspdf-autotable';
 import ExcelJS from 'exceljs';
 import { CATEGORY_PALETTE, groupColumnsByCategory } from '../components/Groups/Grades/categories';
 import { categoryProgress, itemContributionPct } from './categoryProgress';
+import { drawPdfHeader, drawExcelHeader, drawPdfInfoRow, drawExcelInfoRow } from './exportHeader';
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const DARK = '1E293B';
@@ -71,27 +72,23 @@ function columnPctDisplay(col) {
 // estilo que la exportación de Notas de todo el grupo, pero con una única
 // fila: la de este estudiante), + historial de asistencia debajo.
 // ---------------------------------------------------------------------------
-export function exportStudentProfilePdf({ group, student, schema, modo, periodos, historial }) {
+export async function exportStudentProfilePdf({ group, student, schema, modo, periodos, historial, docente }) {
   const esGlobal = modo === 'global';
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  const pageWidth = doc.internal.pageSize.getWidth();
   const marginX = 12;
-
-  doc.setFillColor(...hexToRgb(DARK));
-  doc.rect(0, 0, pageWidth, 24, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(15);
-  doc.text(student.name, marginX, 12);
-  doc.setFontSize(9.5);
-  doc.setFont(undefined, 'normal');
-  const sub = [group.name, student.cedula ? `Cédula ${student.cedula}` : null].filter(Boolean).join(' · ');
-  doc.text(sub, marginX, 19);
+  const offset = await drawPdfHeader(doc, group.centro);
+  const infoY = drawPdfInfoRow(
+    doc,
+    { docente, seccion: group.seccion, materia: group.materia, tipoDocumento: `Perfil — ${student.name}`, anio: group.anioLectivo },
+    offset,
+  );
 
   doc.setTextColor(...hexToRgb(DARK));
-  let y = 32;
+  let y = infoY + 6;
   doc.setFontSize(10);
   doc.setFont(undefined, 'bold');
-  let summary = `Promedio: ${student.avg != null ? student.avg.toFixed(1) : '—'} — ${student.status.label}`;
+  let summary = student.cedula ? `Cédula: ${student.cedula}   |   ` : '';
+  summary += `Promedio: ${student.avg != null ? student.avg.toFixed(1) : '—'} — ${student.status.label}`;
   if (student.asistenciaCounts) {
     const c = student.asistenciaCounts;
     const tardia = c.tardiaInjustificada + c.tardiaJustificada;
@@ -208,7 +205,7 @@ export function exportStudentProfilePdf({ group, student, schema, modo, periodos
 // Excel — una sola hoja: título, resumen, la tabla ancha de una fila (mismo
 // criterio que la exportación de Notas del grupo) y el historial debajo.
 // ---------------------------------------------------------------------------
-export async function exportStudentProfileExcel({ group, student, schema, modo, periodos, historial }) {
+export async function exportStudentProfileExcel({ group, student, schema, modo, periodos, historial, docente }) {
   const esGlobal = modo === 'global';
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Perfil');
@@ -219,18 +216,19 @@ export async function exportStudentProfileExcel({ group, student, schema, modo, 
   const dataColCount = esGlobal ? periodos.length : columns.length;
   const totalCols = 1 + dataColCount + 2; // Estudiante + columnas + Prom. + Estado
 
-  ws.mergeCells(1, 1, 1, totalCols);
-  const title = ws.getCell(1, 1);
-  const sub = [group.name, student.cedula ? `Cédula ${student.cedula}` : null].filter(Boolean).join(' · ');
-  title.value = `${student.name} · ${sub}`;
-  title.font = { size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
-  title.alignment = { horizontal: 'center', vertical: 'middle' };
-  title.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: hexToArgb(DARK) } };
-  ws.getRow(1).height = 24;
+  const rowOffset = await drawExcelHeader(wb, ws, group.centro, totalCols);
+  const infoRows = drawExcelInfoRow(
+    ws,
+    { docente, seccion: group.seccion, materia: group.materia, tipoDocumento: `Perfil — ${student.name}`, anio: group.anioLectivo },
+    1 + rowOffset,
+    totalCols,
+  );
+  const summaryRow = 1 + rowOffset + infoRows;
 
-  ws.mergeCells(2, 1, 2, totalCols);
-  const summaryCell = ws.getCell(2, 1);
-  let summaryText = `Promedio: ${student.avg != null ? student.avg.toFixed(1) : '—'}   |   Estado: ${student.status.label}`;
+  ws.mergeCells(summaryRow, 1, summaryRow, totalCols);
+  const summaryCell = ws.getCell(summaryRow, 1);
+  let summaryText = student.cedula ? `Cédula: ${student.cedula}   |   ` : '';
+  summaryText += `Promedio: ${student.avg != null ? student.avg.toFixed(1) : '—'}   |   Estado: ${student.status.label}`;
   if (student.asistenciaCounts) {
     const c = student.asistenciaCounts;
     const tardia = c.tardiaInjustificada + c.tardiaJustificada;
@@ -239,10 +237,10 @@ export async function exportStudentProfileExcel({ group, student, schema, modo, 
   }
   summaryCell.value = summaryText;
   summaryCell.font = { italic: true, color: { argb: 'FF475569' } };
-  ws.getRow(2).height = 18;
+  ws.getRow(summaryRow).height = 18;
 
-  const headRow1 = 3;
-  const headRow2 = 4;
+  const headRow1 = summaryRow + 1;
+  const headRow2 = summaryRow + 2;
   ws.mergeCells(headRow1, 1, headRow2, 1);
   ws.getCell(headRow1, 1).value = 'Estudiante';
 
@@ -387,24 +385,23 @@ export async function exportStudentProfileExcel({ group, student, schema, modo, 
 // "Totales" — una columna por categoría (su aporte a la nota final), sin
 // desglose de items, para cuando no hace falta el detalle ítem por ítem.
 // ---------------------------------------------------------------------------
-export function exportStudentTotalsPdf({ group, student, schema, modo, periodos }) {
+export async function exportStudentTotalsPdf({ group, student, schema, modo, periodos, docente }) {
   const esGlobal = modo === 'global';
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const marginX = 12;
-
-  doc.setFillColor(...hexToRgb(DARK));
-  doc.rect(0, 0, pageWidth, 24, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(15);
-  doc.text(student.name, marginX, 12);
-  doc.setFontSize(9.5);
-  doc.setFont(undefined, 'normal');
-  const sub = [group.name, student.cedula ? `Cédula ${student.cedula}` : null].filter(Boolean).join(' · ');
-  doc.text(sub, marginX, 19);
+  const offset = await drawPdfHeader(doc, group.centro);
+  const infoY = drawPdfInfoRow(
+    doc,
+    { docente, seccion: group.seccion, materia: group.materia, tipoDocumento: `Resumen — ${student.name}`, anio: group.anioLectivo },
+    offset,
+  );
 
   doc.setTextColor(...hexToRgb(DARK));
-  const y = 32;
+  doc.setFontSize(9.5);
+  doc.setFont(undefined, 'bold');
+  const cedulaLine = student.cedula ? `Cédula: ${student.cedula}` : null;
+  if (cedulaLine) doc.text(cedulaLine, 12, infoY + 6);
+  doc.setFont(undefined, 'normal');
+  const y = cedulaLine ? infoY + 12 : infoY + 6;
 
   if (esGlobal) {
     const head = [['Estudiante', ...periodos.map((p) => p.nombre), 'Nota final', 'Estado']];
@@ -452,7 +449,7 @@ export function exportStudentTotalsPdf({ group, student, schema, modo, periodos 
   doc.save(`perfil_totales_${sanitizeFilename(student.name)}.pdf`);
 }
 
-export async function exportStudentTotalsExcel({ group, student, schema, modo, periodos }) {
+export async function exportStudentTotalsExcel({ group, student, schema, modo, periodos, docente }) {
   const esGlobal = modo === 'global';
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Totales');
@@ -460,16 +457,22 @@ export async function exportStudentTotalsExcel({ group, student, schema, modo, p
   const dataCols = esGlobal ? periodos : (schema ?? []);
   const totalCols = 1 + dataCols.length + 2;
 
-  ws.mergeCells(1, 1, 1, totalCols);
-  const title = ws.getCell(1, 1);
-  const sub = [group.name, student.cedula ? `Cédula ${student.cedula}` : null].filter(Boolean).join(' · ');
-  title.value = `${student.name} · ${sub}`;
-  title.font = { size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
-  title.alignment = { horizontal: 'center', vertical: 'middle' };
-  title.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: hexToArgb(DARK) } };
-  ws.getRow(1).height = 24;
-
-  const headRow = 2;
+  const rowOffset = await drawExcelHeader(wb, ws, group.centro, totalCols);
+  const infoRows = drawExcelInfoRow(
+    ws,
+    { docente, seccion: group.seccion, materia: group.materia, tipoDocumento: `Resumen — ${student.name}`, anio: group.anioLectivo },
+    1 + rowOffset,
+    totalCols,
+  );
+  let headRow = 1 + rowOffset + infoRows;
+  if (student.cedula) {
+    ws.mergeCells(headRow, 1, headRow, totalCols);
+    const cedulaCell = ws.getCell(headRow, 1);
+    cedulaCell.value = `Cédula: ${student.cedula}`;
+    cedulaCell.font = { italic: true, color: { argb: 'FF475569' } };
+    ws.getRow(headRow).height = 16;
+    headRow += 1;
+  }
   const headers = [
     'Estudiante',
     ...(esGlobal ? periodos.map((p) => p.nombre) : (schema ?? []).map((c) => `${c.name} · ${c.weight}%`)),

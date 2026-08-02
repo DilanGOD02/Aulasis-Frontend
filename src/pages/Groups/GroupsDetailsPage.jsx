@@ -13,13 +13,14 @@ function GroupsDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [periodo, setPeriodo] = useState(undefined); // undefined = periodo actual (default del backend)
+  const [materia, setMateria] = useState(undefined); // undefined = primera materia (default del backend) — solo aplica a grupos de escuela
 
   const reloadGroup = useCallback(() => {
     return gruposService
-      .getOne(groupId, periodo)
+      .getOne(groupId, periodo, materia)
       .then((data) => setGroup(mapGrupoDetail(data)))
       .catch(() => setNotFound(true));
-  }, [groupId, periodo]);
+  }, [groupId, periodo, materia]);
 
   // Aplica una nota ya guardada en backend al estado en memoria, sin refetch —
   // así si el usuario cambia de tab y vuelve, la celda no se revierte al valor viejo.
@@ -47,9 +48,10 @@ function GroupsDetailsPage() {
     ]).finally(() => setIsLoading(false));
   }, [reloadGroup, centroId]);
 
-  // Al cambiar de grupo (no de periodo), volvemos a "periodo actual" por defecto.
+  // Al cambiar de grupo (no de periodo/materia), volvemos a los valores por defecto.
   useEffect(() => {
     setPeriodo(undefined);
+    setMateria(undefined);
   }, [groupId]);
 
   if (isLoading) {
@@ -71,7 +73,14 @@ function GroupsDetailsPage() {
     <>
       <GroupPageHeader group={group} onRecalculado={reloadGroup} />
       <div className="mt-4">
-        <GroupTabs group={group} groups={groupsList} selectedPeriodo={periodo} onSelectPeriodo={setPeriodo} />
+        <GroupTabs
+          group={group}
+          groups={groupsList}
+          selectedPeriodo={periodo}
+          onSelectPeriodo={setPeriodo}
+          selectedMateria={materia}
+          onSelectMateria={setMateria}
+        />
       </div>
       <div className="flex-1 px-4 py-5 sm:px-6 sm:py-6">
         <Outlet context={{ group, groupsList, reloadGroup, updateStudentGrade }} />

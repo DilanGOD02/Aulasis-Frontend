@@ -38,6 +38,8 @@ function MainScreen() {
     );
   }
 
+  const handleEliminado = (groupId) => setGroups((prev) => prev.filter((g) => g.id !== groupId));
+
   const nombresEnRiesgo = riesgo
     .slice(0, 3)
     .map((r) => r.nombre.split(' ')[0])
@@ -54,7 +56,7 @@ function MainScreen() {
 
         <div className="mb-6 flex flex-wrap gap-4">
           {summary?.nextClass && (
-            <NextClassCard time={summary.nextClass.label} groupLabel={summary.nextClass.groupName} />
+            <NextClassCard time={summary.nextClass.label} groupLabel={summary.nextClass.groupName} centroId={centroId} />
           )}
           <PeriodSummaryCard
             totalStudents={summary?.totalStudents ?? 0}
@@ -63,7 +65,7 @@ function MainScreen() {
           />
         </div>
 
-        <GroupsSection groups={groups} />
+        <GroupsSection groups={groups} onEliminado={handleEliminado} />
       </div>
     </>
   );

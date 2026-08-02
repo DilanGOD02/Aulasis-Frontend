@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import ExcelJS from 'exceljs';
 import { ATTENDANCE_STATUSES, countByStatus } from '../components/Groups/Attendance/attendanceStatus';
+import { drawPdfHeader, drawExcelHeader, drawPdfInfoRow, drawExcelInfoRow } from './exportHeader';
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const DARK = '1E293B';
@@ -63,24 +64,19 @@ function summaryLine(students, counts) {
 // PDF — lista de asistencia de la fecha seleccionada, mismo estilo que la
 // exportación de Notas (encabezado oscuro, resumen, tabla con estado coloreado).
 // ---------------------------------------------------------------------------
-export function exportAttendancePdf(group, fecha, students, statusById) {
+export async function exportAttendancePdf(group, fecha, students, statusById, docente) {
   const counts = countByStatus(statusById);
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const pageWidth = doc.internal.pageSize.getWidth();
-
-  doc.setFillColor(...hexToRgb(DARK));
-  doc.rect(0, 0, pageWidth, 22, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(14);
-  doc.text(`Asistencia — ${group.name}`, 10, 10);
-  doc.setFontSize(9);
-  doc.setFont(undefined, 'normal');
-  const sub = fechaLarga(fecha);
-  doc.text(sub, 10, 17);
+  const offset = await drawPdfHeader(doc, group.centro);
+  const infoY = drawPdfInfoRow(
+    doc,
+    { docente, seccion: group.seccion, materia: group.materia, tipoDocumento: `Asistencia · ${fechaLarga(fecha)}`, anio: group.anioLectivo },
+    offset,
+  );
 
   doc.setTextColor(...hexToRgb(DARK));
   doc.setFontSize(9);
-  const summaryY = 28;
+  const summaryY = infoY + 4;
   doc.text(summaryLine(students, counts), 10, summaryY);
 
   const body = students.map((s, idx) => [idx + 1, s.name, metaForEntry(statusById[s.id])?.label ?? '—']);
@@ -110,28 +106,28 @@ export function exportAttendancePdf(group, fecha, students, statusById) {
 // ---------------------------------------------------------------------------
 // Excel — misma tabla, con fila de título/resumen y estado coloreado.
 // ---------------------------------------------------------------------------
-export async function exportAttendanceExcel(group, fecha, students, statusById) {
+export async function exportAttendanceExcel(group, fecha, students, statusById, docente) {
   const counts = countByStatus(statusById);
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Asistencia');
 
   const totalCols = 3;
-  ws.mergeCells(1, 1, 1, totalCols);
-  const title = ws.getCell(1, 1);
-  const sub = fechaLarga(fecha);
-  title.value = `Asistencia — ${group.name} · ${sub}`;
-  title.font = { size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
-  title.alignment = { horizontal: 'center', vertical: 'middle' };
-  title.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: hexToArgb(DARK) } };
-  ws.getRow(1).height = 24;
+  const rowOffset = await drawExcelHeader(wb, ws, group.centro, totalCols);
+  const infoRows = drawExcelInfoRow(
+    ws,
+    { docente, seccion: group.seccion, materia: group.materia, tipoDocumento: `Asistencia · ${fechaLarga(fecha)}`, anio: group.anioLectivo },
+    1 + rowOffset,
+    totalCols,
+  );
+  const summaryRow = 1 + rowOffset + infoRows;
 
-  ws.mergeCells(2, 1, 2, totalCols);
-  const summary = ws.getCell(2, 1);
+  ws.mergeCells(summaryRow, 1, summaryRow, totalCols);
+  const summary = ws.getCell(summaryRow, 1);
   summary.value = summaryLine(students, counts);
   summary.font = { italic: true, color: { argb: 'FF475569' } };
-  ws.getRow(2).height = 18;
+  ws.getRow(summaryRow).height = 18;
 
-  const headRow = 3;
+  const headRow = summaryRow + 1;
   ['N.°', 'Estudiante', 'Estado'].forEach((h, idx) => {
     const cell = ws.getCell(headRow, idx + 1);
     cell.value = h;

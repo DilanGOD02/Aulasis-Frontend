@@ -10,6 +10,7 @@ import { useToast } from '../../context/ToastContext';
 import ImageUploader from './ImageUploader';
 import TimeField12h from './TimeField12h';
 import { COLORS } from './colorPalette';
+import { tieneFeature, MATERIAS_ESCUELA_SUGERIDAS } from '../../utils/centerTypeFeatures';
 
 const DAYS = [
   { key: 'L', label: 'Lunes', backend: 'lunes' },
@@ -36,11 +37,6 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
   const { showToast } = useToast();
   const isEditMode = !!groupId;
 
-  const [centros, setCentros] = useState([]);
-  // El centro no se puede cambiar una vez creado el grupo (editar mantiene el de la URL);
-  // al crear, arranca con el centro desde el que se entró pero se puede elegir otro.
-  const [selectedCentroId, setSelectedCentroId] = useState(centroEducativoId ?? '');
-
   const [seccion, setSeccion] = useState('');
   const [materia, setMateria] = useState('');
   const [anioLectivo, setAnioLectivo] = useState(new Date().getFullYear());
@@ -63,6 +59,20 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
   const [nuevoPeriodoForm, setNuevoPeriodoForm] = useState({ nombre: '', fechaInicio: '', fechaFin: '', totalLecciones: '' });
   const [periodoError, setPeriodoError] = useState('');
 
+  // Grupos de escuela (I/II Ciclo): varias materias en el mismo grupo, cada
+  // una con su propio esquema — ver centerTypeFeatures.js#materiasMultiples.
+  const [tipoCentroClave, setTipoCentroClave] = useState(null);
+  const [materiasActivas, setMateriasActivas] = useState({}); // { [nombre]: templateId | null }
+  const [nuevaMateriaNombre, setNuevaMateriaNombre] = useState('');
+  const esEscuela = tieneFeature(tipoCentroClave, 'materiasMultiples');
+
+  useEffect(() => {
+    if (isEditMode || !centroEducativoId) return;
+    centrosEducativosService.getOne(centroEducativoId).then((centro) => {
+      setTipoCentroClave(centro.tipoCentroEducativo?.clave ?? null);
+    });
+  }, [isEditMode, centroEducativoId]);
+
   useEffect(() => {
     esquemasService.list().then((data) => {
       const mapped = data.map(mapTemplate);
@@ -71,13 +81,7 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
     });
   }, [isEditMode]);
 
-  // El centro no se puede cambiar editando (ya lo trae fijo la URL) — solo hace falta la lista al crear.
-  useEffect(() => {
-    if (isEditMode) return;
-    centrosEducativosService.listMios().then(setCentros);
-  }, [isEditMode]);
-
-  useEffect(() => {
+useEffect(() => {
     if (!isEditMode) {
       periodosService.listDisponibles().then((data) => {
         setPeriodosDisponibles(data);
@@ -132,6 +136,22 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
 
   const activeDays = DAYS.filter((d) => schedule[d.key].enabled);
   const template = templates.find((t) => t.id === templateId);
+  const materiasSeleccionadas = Object.entries(materiasActivas).filter(([, tId]) => tId !== null);
+  const materiasListas = esEscuela && materiasSeleccionadas.length > 0 && materiasSeleccionadas.every(([, tId]) => tId);
+  const toggleMateria = (nombre) =>
+    setMateriasActivas((prev) => {
+      const next = { ...prev };
+      if (nombre in next) delete next[nombre];
+      else next[nombre] = templates[0]?.id ?? null;
+      return next;
+    });
+  const setMateriaTemplate = (nombre, tId) => setMateriasActivas((prev) => ({ ...prev, [nombre]: tId }));
+  const agregarMateriaExtra = () => {
+    const nombre = nuevaMateriaNombre.trim();
+    if (!nombre || nombre in materiasActivas) return;
+    setMateriasActivas((prev) => ({ ...prev, [nombre]: templates[0]?.id ?? null }));
+    setNuevaMateriaNombre('');
+  };
   const necesitaPeriodo =
     periodosDisponibles !== null && periodosDisponibles.length === 0 && periodosNuevosLocal.length === 0;
   const seleccionados = Object.entries(seleccion);
@@ -177,7 +197,7 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isEditMode && (!templateId || !selectedCentroId)) return;
+    if (!isEditMode && !(esEscuela ? materiasListas : templateId)) return;
     if (necesitaPeriodo || !totalPeriodos || seleccionIncompleta) return;
     setError('');
     setIsSubmitting(true);
@@ -226,14 +246,15 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
         navigate(`/inicio/${centroEducativoId}/grupos/${groupId}`);
       } else {
         const grupo = await gruposService.create({
-          centroEducativoId: Number(selectedCentroId),
+          centroEducativoId: Number(centroEducativoId),
           seccion,
-          materia,
           color,
           anioLectivo: Number(anioLectivo),
           minutosPorLeccion: Number(minutosPorLeccion),
-          esquemaOrigenId: templateId,
           horarios,
+          ...(esEscuela
+            ? { materias: materiasSeleccionadas.map(([nombre, esquemaOrigenId]) => ({ nombre, esquemaOrigenId })) }
+            : { materia, esquemaOrigenId: templateId }),
           ...(logoUrl ? { logoUrl } : {}),
           periodos: seleccionados.map(([periodoLectivoId, fechas]) => ({
             periodoLectivoId: Number(periodoLectivoId),
@@ -250,7 +271,7 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
           })),
         });
         showToast('Grupo creado');
-        navigate(`/inicio/${selectedCentroId}/grupos/${grupo.id}`);
+        navigate(`/inicio/${centroEducativoId}/grupos/${grupo.id}`);
       }
     } catch (err) {
       setError(err.message);
@@ -266,27 +287,6 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-wrap items-start gap-[18px]">
       <div className="flex-[2] min-w-[300px] rounded-2xl border border-[#EEF1F6] bg-white p-5 sm:p-6">
-        {!isEditMode && (
-          <div className="mb-5">
-            <label className="mb-2 block text-[13px] font-bold text-[#475569]">Centro educativo</label>
-            <select
-              required
-              value={selectedCentroId}
-              onChange={(e) => setSelectedCentroId(e.target.value)}
-              className="w-full rounded-[11px] border border-[#E2E8F0] px-3.5 py-3 text-[14.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)]"
-            >
-              <option value="" disabled>
-                Selecciona un centro educativo
-              </option>
-              {centros.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
         <div className="mb-5 flex gap-3">
           <div className="flex-1">
             <label className="mb-2 block text-[13px] font-bold text-[#475569]">Sección</label>
@@ -298,16 +298,18 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
               className="w-full rounded-[11px] border border-[#E2E8F0] px-3.5 py-3 text-[14.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)]"
             />
           </div>
-          <div className="flex-[1.5]">
-            <label className="mb-2 block text-[13px] font-bold text-[#475569]">Materia</label>
-            <input
-              required
-              value={materia}
-              onChange={(e) => setMateria(e.target.value)}
-              placeholder="Ej. Matemática"
-              className="w-full rounded-[11px] border border-[#E2E8F0] px-3.5 py-3 text-[14.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)]"
-            />
-          </div>
+          {!(esEscuela && !isEditMode) && (
+            <div className="flex-[1.5]">
+              <label className="mb-2 block text-[13px] font-bold text-[#475569]">Materia</label>
+              <input
+                required
+                value={materia}
+                onChange={(e) => setMateria(e.target.value)}
+                placeholder="Ej. Matemática"
+                className="w-full rounded-[11px] border border-[#E2E8F0] px-3.5 py-3 text-[14.5px] font-semibold text-[#1E293B] outline-none focus:border-[var(--brand)]"
+              />
+            </div>
+          )}
           <div className="w-[110px] shrink-0">
             <label className="mb-2 block text-[13px] font-bold text-[#475569]">Año lectivo</label>
             <input
@@ -556,13 +558,98 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
           ))}
         </div>
 
-        <label className="mb-2 block text-[13px] font-bold text-[#475569]">Esquema de evaluación</label>
+        <label className="mb-2 block text-[13px] font-bold text-[#475569]">
+          {esEscuela && !isEditMode ? 'Materias y esquema de evaluación' : 'Esquema de evaluación'}
+        </label>
         {isEditMode ? (
           <div className="flex items-center gap-3 rounded-[12px] border border-[#E2E8F0] bg-[#FAFBFD] px-3.5 py-3">
             <i className="ph-bold ph-lock-simple shrink-0 text-[16px] text-[#94A3B8]" />
             <div className="text-[13px] font-semibold text-[#64748B]">
               El esquema de evaluación no se puede cambiar una vez creado el grupo (ya tiene notas asociadas).
               Ajustalo desde la pestaña "Esquema" del grupo.
+            </div>
+          </div>
+        ) : esEscuela ? (
+          <div className="mb-1">
+            <p className="mb-2.5 text-[12px] font-medium text-[#94A3B8]">
+              Marcá las materias que vas a dar en este grupo — cada una lleva sus propias notas, con su propio
+              esquema, pero comparten estudiantes y asistencia.
+            </p>
+            <div className="flex flex-col gap-2">
+              {MATERIAS_ESCUELA_SUGERIDAS.map((nombre) => {
+                const marcada = nombre in materiasActivas;
+                return (
+                  <div key={nombre} className="rounded-[12px] border border-[#E2E8F0] px-3.5 py-2.5">
+                    <label className="flex cursor-pointer items-center gap-2.5">
+                      <input
+                        type="checkbox"
+                        checked={marcada}
+                        onChange={() => toggleMateria(nombre)}
+                        className="h-4 w-4 accent-[var(--brand)]"
+                      />
+                      <span className="text-[13.5px] font-bold text-[#1E293B]">{nombre}</span>
+                    </label>
+                    {marcada && (
+                      <select
+                        value={materiasActivas[nombre] ?? ''}
+                        onChange={(e) => setMateriaTemplate(nombre, Number(e.target.value))}
+                        className="mt-2 w-full rounded-lg border border-[#E2E8F0] px-2.5 py-1.5 text-[12.5px] font-semibold text-[#1E293B] outline-none"
+                      >
+                        {templates.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                );
+              })}
+
+              {Object.keys(materiasActivas)
+                .filter((nombre) => !MATERIAS_ESCUELA_SUGERIDAS.includes(nombre))
+                .map((nombre) => (
+                  <div key={nombre} className="rounded-[12px] border border-[var(--brand)]/40 bg-[var(--brand)]/5 px-3.5 py-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[13.5px] font-bold text-[#1E293B]">{nombre}</span>
+                      <button
+                        type="button"
+                        onClick={() => toggleMateria(nombre)}
+                        className="press flex h-6 w-6 items-center justify-center rounded-full text-[#94A3B8] hover:bg-[#E2E8F0] hover:text-[#DC2626]"
+                      >
+                        <i className="ph-bold ph-x text-[12px]" />
+                      </button>
+                    </div>
+                    <select
+                      value={materiasActivas[nombre] ?? ''}
+                      onChange={(e) => setMateriaTemplate(nombre, Number(e.target.value))}
+                      className="mt-2 w-full rounded-lg border border-[#E2E8F0] px-2.5 py-1.5 text-[12.5px] font-semibold text-[#1E293B] outline-none"
+                    >
+                      {templates.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+            </div>
+
+            <div className="mt-2.5 flex gap-2">
+              <input
+                value={nuevaMateriaNombre}
+                onChange={(e) => setNuevaMateriaNombre(e.target.value)}
+                placeholder="Otra materia (ej. Educación Física)"
+                className="min-w-0 flex-1 rounded-lg border border-[#E2E8F0] px-3 py-2 text-[13px] font-semibold text-[#1E293B] outline-none"
+              />
+              <button
+                type="button"
+                onClick={agregarMateriaExtra}
+                disabled={!nuevaMateriaNombre.trim()}
+                className="press rounded-lg border border-dashed border-[#CBD5E1] px-3 py-2 text-[12.5px] font-bold text-[var(--brand)] disabled:opacity-50"
+              >
+                + Agregar
+              </button>
             </div>
           </div>
         ) : (
@@ -622,9 +709,17 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
           </div>
           <div className="rounded-[10px] border-l-4 bg-[#FAFBFD] p-3" style={{ borderColor: color }}>
             <div className="text-[15px] font-extrabold text-[#0F172A]">
-              {seccion || materia ? `${seccion} · ${materia}` : 'Nombre del grupo'}
+              {esEscuela && !isEditMode
+                ? seccion || 'Nombre del grupo'
+                : seccion || materia
+                  ? `${seccion} · ${materia}`
+                  : 'Nombre del grupo'}
             </div>
-            <div className="text-[12.5px] font-semibold text-[#94A3B8]">0 estudiantes</div>
+            <div className="text-[12.5px] font-semibold text-[#94A3B8]">
+              {esEscuela && !isEditMode && materiasSeleccionadas.length > 0
+                ? `${materiasSeleccionadas.length} materia${materiasSeleccionadas.length === 1 ? '' : 's'} · 0 estudiantes`
+                : '0 estudiantes'}
+            </div>
           </div>
         </div>
 
@@ -669,7 +764,7 @@ function CreateGroupForm({ groupId, centroEducativoId }) {
           type="submit"
           disabled={
             isSubmitting ||
-            (!isEditMode && (!template || !selectedCentroId)) ||
+            (!isEditMode && !(esEscuela ? materiasListas : template)) ||
             necesitaPeriodo ||
             !totalPeriodos ||
             seleccionIncompleta

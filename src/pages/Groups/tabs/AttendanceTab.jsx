@@ -219,7 +219,7 @@ function AttendanceTab() {
       <>
         <div className="mb-3 flex items-center gap-1.5 text-[13px] font-semibold text-[#64748B]">
           <i className="ph ph-info text-[16px] text-[var(--brand)]" />
-          Año completo (solo lectura) — veces presente, tardía y ausente en todo el año. Cambiá a un periodo puntual para pasar o editar asistencia.
+          Anual (solo lectura) — veces presente, tardía y ausente en todo el año. Cambiá a un periodo puntual para pasar o editar asistencia.
         </div>
         <div className="mb-3.5 flex justify-end">
           <button

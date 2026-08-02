@@ -14,14 +14,28 @@ function indicadorVacio() {
   return { id: undefined, texto: '', celdasPorNivel: {} };
 }
 
+// Los niveles se identifican en el estado por una key propia (`_key`), NO por
+// `valor` — `valor` es editable (el profesor lo sube/baja) y usarlo como
+// identidad hacía que, al cambiarlo, las descripciones ya escritas quedaran
+// "huérfanas" bajo el valor viejo y se vieran como borradas.
+let siguienteKey = 0;
+function conKey(nivel) {
+  return { ...nivel, _key: `n${siguienteKey++}` };
+}
+
 /** Convierte lo que devuelve el backend (o el borrador extraído de un PDF) al estado editable del diseñador. */
 function aEstado(detalle) {
-  const niveles = (detalle?.niveles?.length ? detalle.niveles : ESCALA_POR_DEFECTO).map((n) => ({ ...n }));
+  const niveles = (detalle?.niveles?.length ? detalle.niveles : ESCALA_POR_DEFECTO).map(conKey);
+  const keyPorValor = new Map(niveles.map((n) => [n.valor, n._key]));
   const indicadores = detalle?.indicadores?.length
     ? detalle.indicadores.map((ind) => ({
         id: ind.id,
         texto: ind.texto,
-        celdasPorNivel: Object.fromEntries((ind.celdas ?? []).map((c) => [c.nivelValor, c.descripcion ?? ''])),
+        celdasPorNivel: Object.fromEntries(
+          (ind.celdas ?? [])
+            .filter((c) => keyPorValor.has(c.nivelValor))
+            .map((c) => [keyPorValor.get(c.nivelValor), c.descripcion ?? '']),
+        ),
       }))
     : [indicadorVacio()];
   return { nombre: detalle?.nombre ?? '', niveles, indicadores };
@@ -69,22 +83,22 @@ function RubricaDesignerModal({ itemId, itemNombre, onClose, onSaved }) {
     const siguienteValor = estado.niveles.length
       ? Math.max(...estado.niveles.map((n) => n.valor)) + 1
       : 0;
-    setEstado((prev) => ({ ...prev, niveles: [...prev.niveles, { valor: siguienteValor, etiqueta: '' }] }));
+    setEstado((prev) => ({ ...prev, niveles: [...prev.niveles, conKey({ valor: siguienteValor, etiqueta: '' })] }));
   };
-  const quitarNivel = (valor) =>
+  const quitarNivel = (key) =>
     setEstado((prev) => ({
       ...prev,
-      niveles: prev.niveles.filter((n) => n.valor !== valor),
+      niveles: prev.niveles.filter((n) => n._key !== key),
       indicadores: prev.indicadores.map((ind) => {
         const resto = { ...ind.celdasPorNivel };
-        delete resto[valor];
+        delete resto[key];
         return { ...ind, celdasPorNivel: resto };
       }),
     }));
-  const setNivel = (valorActual, patch) =>
+  const setNivel = (key, patch) =>
     setEstado((prev) => ({
       ...prev,
-      niveles: prev.niveles.map((n) => (n.valor === valorActual ? { ...n, ...patch } : n)),
+      niveles: prev.niveles.map((n) => (n._key === key ? { ...n, ...patch } : n)),
     }));
 
   const agregarIndicador = () =>
@@ -96,11 +110,11 @@ function RubricaDesignerModal({ itemId, itemNombre, onClose, onSaved }) {
       ...prev,
       indicadores: prev.indicadores.map((ind, i) => (i === idx ? { ...ind, texto } : ind)),
     }));
-  const setCelda = (idx, nivelValor, descripcion) =>
+  const setCelda = (idx, nivelKey, descripcion) =>
     setEstado((prev) => ({
       ...prev,
       indicadores: prev.indicadores.map((ind, i) =>
-        i === idx ? { ...ind, celdasPorNivel: { ...ind.celdasPorNivel, [nivelValor]: descripcion } } : ind,
+        i === idx ? { ...ind, celdasPorNivel: { ...ind.celdasPorNivel, [nivelKey]: descripcion } } : ind,
       ),
     }));
 
@@ -144,7 +158,7 @@ function RubricaDesignerModal({ itemId, itemNombre, onClose, onSaved }) {
             texto: ind.texto,
             celdas: estado.niveles.map((n) => ({
               nivelValor: Number(n.valor),
-              descripcion: ind.celdasPorNivel[n.valor] ?? '',
+              descripcion: ind.celdasPorNivel[n._key] ?? '',
             })),
           })),
       };
@@ -236,21 +250,21 @@ function RubricaDesignerModal({ itemId, itemNombre, onClose, onSaved }) {
                     Indicadores
                   </th>
                   {estado.niveles.map((n) => (
-                    <th key={n.valor} className="min-w-[160px] border-b border-r border-[#EEF1F6] px-3 py-2">
+                    <th key={n._key} className="min-w-[160px] border-b border-r border-[#EEF1F6] px-3 py-2">
                       <div className="mb-1 flex items-center justify-center gap-1">
                         <input
                           type="number"
                           value={n.valor}
-                          onChange={(e) => setNivel(n.valor, { valor: Number(e.target.value) })}
+                          onChange={(e) => setNivel(n._key, { valor: Number(e.target.value) })}
                           className="w-10 rounded border border-[#E2E8F0] px-1 py-0.5 text-center text-[12px] font-bold text-[#1E293B] outline-none"
                         />
-                        <button type="button" onClick={() => quitarNivel(n.valor)} className="press text-[#CBD5E1]">
+                        <button type="button" onClick={() => quitarNivel(n._key)} className="press text-[#CBD5E1]">
                           <i className="ph ph-x text-[12px]" />
                         </button>
                       </div>
                       <input
                         value={n.etiqueta ?? ''}
-                        onChange={(e) => setNivel(n.valor, { etiqueta: e.target.value })}
+                        onChange={(e) => setNivel(n._key, { etiqueta: e.target.value })}
                         placeholder="Etiqueta"
                         className="w-full rounded border border-[#E2E8F0] px-1.5 py-1 text-center text-[12px] font-bold text-[#334155] outline-none"
                       />
@@ -281,10 +295,10 @@ function RubricaDesignerModal({ itemId, itemNombre, onClose, onSaved }) {
                       />
                     </td>
                     {estado.niveles.map((n) => (
-                      <td key={n.valor} className="border-b border-r border-[#EEF1F6] px-3 py-2 align-top">
+                      <td key={n._key} className="border-b border-r border-[#EEF1F6] px-3 py-2 align-top">
                         <textarea
-                          value={ind.celdasPorNivel[n.valor] ?? ''}
-                          onChange={(e) => setCelda(idx, n.valor, e.target.value)}
+                          value={ind.celdasPorNivel[n._key] ?? ''}
+                          onChange={(e) => setCelda(idx, n._key, e.target.value)}
                           placeholder="Descripción"
                           rows={2}
                           className="w-full resize-none rounded border border-transparent bg-transparent px-1 py-0.5 text-[12px] font-medium text-[#64748B] outline-none focus:border-[#E2E8F0] focus:bg-[#FAFBFD]"

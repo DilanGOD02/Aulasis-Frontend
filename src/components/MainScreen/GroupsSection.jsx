@@ -2,7 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import GroupCard from './GroupCard';
 
 /** "Mis grupos" heading + responsive card grid, with a dashed "create group" tile at the end. */
-function GroupsSection({ groups }) {
+function GroupsSection({ groups, onEliminado }) {
   const navigate = useNavigate();
   const { centroId } = useParams();
 
@@ -15,7 +15,7 @@ function GroupsSection({ groups }) {
 
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
         {groups.map((group) => (
-          <GroupCard key={group.id} group={group} />
+          <GroupCard key={group.id} group={group} onEliminado={onEliminado} />
         ))}
 
         <div

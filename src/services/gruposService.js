@@ -6,8 +6,11 @@ export const gruposService = {
     return parseJsonOrThrow(response);
   },
 
-  async getOne(id, periodo) {
-    const query = periodo ? `?periodo=${periodo}` : '';
+  async getOne(id, periodo, materia) {
+    const params = new URLSearchParams();
+    if (periodo) params.set('periodo', periodo);
+    if (materia) params.set('materia', materia);
+    const query = params.toString() ? `?${params}` : '';
     const response = await apiFetch(`/grupos/${id}${query}`);
     return parseJsonOrThrow(response);
   },

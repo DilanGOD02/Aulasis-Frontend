@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { FONT } from '../colors';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -40,21 +40,16 @@ function NavItem({ to, label, icon, end }) {
 }
 
 /**
- * App top navigation: brand mark, desktop nav links, "Crear grupo" action,
- * notifications bell and avatar. Nav links move to the bottom tab bar on
- * mobile (see BottomNav), so this bar stays compact on small screens.
+ * App top navigation: brand mark, desktop nav links, notifications bell and
+ * avatar. Nav links move to the bottom tab bar on mobile (see BottomNav), so
+ * this bar stays compact on small screens. Crear grupo ya no vive acá — solo
+ * se crea desde adentro de un centro educativo (tile en GroupsSection.jsx).
  */
 function Navbar({ unseenRiskCount = 0 }) {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
   const { user, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
-
-  // Navbar vive fuera del árbol de rutas anidadas de "inicio/:centroId", así que
-  // useParams() no lo ve — se saca el centro actual (si hay uno) del pathname.
-  const centroIdMatch = pathname.match(/^\/inicio\/(\d+)(?:\/|$)/);
-  const centroIdEnUrl = centroIdMatch ? centroIdMatch[1] : null;
 
   useEffect(() => {
     if (!menuOpen) return undefined;
@@ -88,15 +83,6 @@ function Navbar({ unseenRiskCount = 0 }) {
         </div>
 
         <div className="ml-auto flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => navigate(centroIdEnUrl ? `/inicio/${centroIdEnUrl}/grupos/crear` : '/inicio')}
-            className="press flex items-center gap-2 rounded-[11px] bg-[var(--brand)] px-3 py-2.5 font-bold text-[14px] text-white shadow-[0_12px_26px_-10px_rgba(99,102,241,0.6)] md:px-4"
-          >
-            <i className="ph-bold ph-plus text-[16px]" />
-            <span className="hidden md:inline">Crear grupo</span>
-          </button>
-
           <button
             type="button"
             onClick={() => navigate('/alertas')}

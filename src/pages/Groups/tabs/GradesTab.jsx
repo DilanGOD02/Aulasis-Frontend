@@ -49,6 +49,8 @@ function GradesTab() {
         itemEvaluacionId: itemId,
         periodoLectivoId,
         valorObtenido: value === '' || value === null ? null : Number(value),
+        // Grupos de escuela con varias materias — ver GrupoMateria en el backend.
+        ...(group.materiaSeleccionadaId ? { grupoMateriaId: group.materiaSeleccionadaId } : {}),
       });
       const status = statusMeta(result.status);
       setStudents((prev) =>
@@ -80,7 +82,7 @@ function GradesTab() {
         <div className="mb-3 flex items-center justify-between gap-2 text-[13px] font-semibold text-[#64748B]">
           <div className="flex items-center gap-1.5">
             <i className="ph ph-info text-[16px] text-[var(--brand)]" />
-            Año completo (solo lectura): la nota ya obtenida en cada periodo y la nota final (su promedio).
+            Anual (solo lectura): la nota ya obtenida en cada periodo y la nota final (su promedio).
           </div>
           <ExportMenu group={group} students={students} />
         </div>
@@ -129,6 +131,7 @@ function GradesTab() {
             studentName: students.find((s) => s.id === studentId)?.name ?? '',
             itemName: columns.find((c) => c.key === itemId)?.header ?? '',
             itemValorMaximo: columns.find((c) => c.key === itemId)?.valorMaximo ?? 100,
+            itemWeight: columns.find((c) => c.key === itemId)?.weight ?? null,
           })
         }
       />
@@ -154,6 +157,7 @@ function GradesTab() {
           itemId={rubricaAbierta.itemId}
           itemName={rubricaAbierta.itemName}
           itemValorMaximo={rubricaAbierta.itemValorMaximo}
+          itemWeight={rubricaAbierta.itemWeight}
           periodoLectivoId={periodoLectivoId}
           studentName={rubricaAbierta.studentName}
           onClose={() => setRubricaAbierta(null)}
