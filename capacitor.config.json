@@ -3,7 +3,7 @@
   "appName": "Aulasis",
   "webDir": "dist",
   "server": {
-    "url": "https://aulasis.degutierrezh02.workers.dev",
+    "url": "https://aulasis-frontend.aulasis-soporte.workers.dev",
     "cleartext": false,
     "androidScheme": "https"
   }
