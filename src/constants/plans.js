@@ -14,7 +14,7 @@ export const PLAN_FRECUENCIA = {
   anual: 'Se paga una vez al año',
 };
 
-export const PLAN_ORDEN = ['mensual', 'trimestral', 'cuatrimestral', 'semestral', 'anual'];
+export const PLAN_ORDEN = ['mensual', /*'trimestral', 'cuatrimestral',*/ 'semestral', 'anual'];
 
 export const PLAN_MESES = {
   mensual: 1,
