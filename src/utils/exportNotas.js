@@ -529,6 +529,7 @@ function csvCell(value) {
 
 export function exportNotasSea(group, students) {
   const columns = buildGradeColumns(group.evaluationSchema);
+  const colByKey = Object.fromEntries(columns.map((c) => [c.key, c]));
   const map = buildSeaCategoryMap(group.evaluationSchema);
   const seaCols = {
     tc: map.trabajoCotidiano && categoryScoreColumn(columns, map.trabajoCotidiano.id),
@@ -537,14 +538,19 @@ export function exportNotasSea(group, students) {
     asistencia: map.asistencia && categoryScoreColumn(columns, map.asistencia.id),
   };
 
+  // SEA espera el % que cada categoría ya aporta a la nota final (mismo
+  // criterio que la tabla en pantalla y el Excel de notas), no la nota cruda
+  // sobre el valor máximo del ítem.
+  const categoryPct = (s, col) => (col ? categoryContributionPct(s, col, colByKey) : '');
+
   const header = ['Id', 'Nombre', 'Trabajo cotidiano', 'Tareas', 'Prueba', 'Asistencia'];
   const rows = students.map((s) => [
     s.cedula ?? '',
     s.name ?? '',
-    seaCols.tc ? (columnValue(s, seaCols.tc) ?? '') : '',
-    seaCols.tareas ? (columnValue(s, seaCols.tareas) ?? '') : '',
-    seaCols.prueba ? (columnValue(s, seaCols.prueba) ?? '') : '',
-    seaCols.asistencia ? (columnValue(s, seaCols.asistencia) ?? '') : '',
+    categoryPct(s, seaCols.tc),
+    categoryPct(s, seaCols.tareas),
+    categoryPct(s, seaCols.prueba),
+    categoryPct(s, seaCols.asistencia),
   ]);
 
   const BOM = '﻿';
