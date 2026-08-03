@@ -324,10 +324,8 @@ useEffect(() => {
 
         <label className="mb-1 block text-[13px] font-bold text-[#475569]">Periodos que usa este grupo</label>
         <p className="mb-2.5 text-[12px] font-medium text-[#94A3B8]">
-          Marcá los periodos que aplican a este grupo y ajustá de qué fecha a qué fecha dura cada uno acá. Si
-          desmarcás uno, simplemente no se usa en este grupo (no se borra de la institución). Los periodos nuevos
-          que crees acá quedan privados de este grupo — no le salen a otros profesores.
-        </p>
+          Marcá los periodos que aplican a este grupo y ajustá de qué fecha a qué fecha dura cada uno acá. Tambien puedes personalizarlo a tu gusto creando uno nuevo
+        </p>    
         {periodosDisponibles === null ? (
           <div className="mb-5 text-[13px] font-semibold text-[#94A3B8]">Cargando periodos…</div>
         ) : (

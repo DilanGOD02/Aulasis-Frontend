@@ -1,4 +1,13 @@
-import { apiBaseUrl, apiFetch, jsonHeaders, parseJsonOrThrow, refreshSession, setAccessToken } from './apiClient';
+import {
+  apiBaseUrl,
+  apiFetch,
+  jsonHeaders,
+  parseJsonOrThrow,
+  refreshSession,
+  setAccessToken,
+  getRefreshToken,
+  setRefreshToken,
+} from './apiClient';
 import { getTenantSlug } from '../config/tenant';
 
 export const authService = {
@@ -15,17 +24,17 @@ export const authService = {
   async login(email, password) {
     const response = await fetch(`${apiBaseUrl}/auth/login`, {
       method: 'POST',
-      credentials: 'include',
       headers: { ...jsonHeaders(), 'x-tenant-slug': getTenantSlug() },
       body: JSON.stringify({ email, password }),
     });
-    const data = await parseJsonOrThrow(response); // { accessToken, user }
+    const data = await parseJsonOrThrow(response); // { accessToken, refreshToken, user }
     setAccessToken(data.accessToken);
+    setRefreshToken(data.refreshToken);
     return data;
   },
 
   /**
-   * Recupera sesión vía la cookie httpOnly (sin tocar localStorage). Usa la
+   * Recupera sesión con el refresh token guardado en localStorage. Usa la
    * misma promesa compartida que apiClient — si dos llamadas concurrentes
    * (ej. el doble efecto de StrictMode) piden refresh a la vez, comparten UNA
    * sola petición en vez de que la segunda invalide el token que la primera
@@ -36,12 +45,14 @@ export const authService = {
   },
 
   async logout() {
+    const refreshToken = getRefreshToken();
     await fetch(`${apiBaseUrl}/auth/logout`, {
       method: 'POST',
-      credentials: 'include',
-      headers: { 'x-tenant-slug': getTenantSlug() },
+      headers: { ...jsonHeaders(), 'x-tenant-slug': getTenantSlug() },
+      body: JSON.stringify({ refreshToken: refreshToken || undefined }),
     }).catch(() => {});
     setAccessToken(null);
+    setRefreshToken(null);
   },
 
   async forgotPassword(email) {

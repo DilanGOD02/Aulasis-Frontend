@@ -3,28 +3,48 @@ import { getTenantSlug } from '../config/tenant';
 
 export const apiBaseUrl = ENV.API_URL.replace(/\/$/, '');
 
-// El access token vive solo en memoria (nunca localStorage/sessionStorage):
-// así un XSS no puede leerlo del disco. Se pierde en un F5 y se recupera
-// con un refresh silencioso contra la cookie httpOnly (ver AuthContext).
+// El access token vive solo en memoria: se pierde en un F5 y se recupera con
+// un refresh silencioso (ver AuthContext).
 let accessToken = null;
 export const getAccessToken = () => accessToken;
 export const setAccessToken = (token) => {
   accessToken = token;
 };
 
+// El refresh token SÍ se persiste (localStorage) para que la sesión
+// sobreviva a cerrar la app/pestaña. No es una cookie httpOnly a propósito:
+// frontend (Cloudflare Workers) y backend (Render) son dominios sin relación
+// entre sí, así que cualquier cookie entre ellos es "de tercero" — Safari y
+// Firefox la bloquean por default, y Chrome/Edge cada vez más, así que la
+// sesión se perdía todo el tiempo al cerrar y reabrir. localStorage no tiene
+// ese problema porque no depende de políticas de cookies cross-site.
+const REFRESH_TOKEN_KEY = 'aulasis_refresh_token';
+export const getRefreshToken = () => localStorage.getItem(REFRESH_TOKEN_KEY);
+export const setRefreshToken = (token) => {
+  if (token) localStorage.setItem(REFRESH_TOKEN_KEY, token);
+  else localStorage.removeItem(REFRESH_TOKEN_KEY);
+};
+
 let refreshPromise = null;
 
 async function attemptRefresh() {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) throw new Error('No hay sesión guardada');
+
   const response = await fetch(`${apiBaseUrl}/auth/refresh`, {
     method: 'POST',
-    credentials: 'include', // manda la cookie httpOnly del refresh token
-    headers: { 'x-tenant-slug': getTenantSlug() },
+    headers: { 'Content-Type': 'application/json', 'x-tenant-slug': getTenantSlug() },
+    body: JSON.stringify({ refreshToken }),
   });
 
-  if (!response.ok) throw new Error('Refresh failed');
+  if (!response.ok) {
+    setRefreshToken(null);
+    throw new Error('Refresh failed');
+  }
 
   const data = await response.json();
   setAccessToken(data.accessToken);
+  setRefreshToken(data.refreshToken); // rota en cada uso — hay que guardar el nuevo
   return data;
 }
 

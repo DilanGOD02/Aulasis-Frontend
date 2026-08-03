@@ -9,9 +9,9 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Al montar, intenta recuperar la sesión con la cookie httpOnly del
-  // refresh token — el access token nunca se persiste, así que un F5
-  // depende de este refresh silencioso en vez de leer localStorage.
+  // Al montar, intenta recuperar la sesión con el refresh token guardado en
+  // localStorage — el access token nunca se persiste, así que un F5 depende
+  // de este refresh silencioso.
   useEffect(() => {
     authService
       .refresh()
