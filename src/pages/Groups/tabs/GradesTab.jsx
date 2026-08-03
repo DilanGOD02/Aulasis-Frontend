@@ -100,12 +100,12 @@ function GradesTab() {
       <>
         <LoadingOverlay show={isRecalculando} message="Actualizando cálculos…" />
 
-        <div className="mb-3 flex items-center justify-between gap-2 text-[13px] font-semibold text-[#64748B]">
+        <div className="mb-3 flex flex-col items-start gap-2.5 text-[13px] font-semibold text-[#64748B] sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-1.5">
             <i className="ph ph-info text-[16px] text-[var(--brand)]" />
             Anual (solo lectura): la nota ya obtenida en cada periodo y la nota final (su promedio).
           </div>
-          <div className="flex shrink-0 items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:flex-nowrap sm:gap-2.5">
             <RecalcularButton onClick={handleRecalcular} isLoading={isRecalculando} />
             <ExportMenu group={group} students={students} />
           </div>

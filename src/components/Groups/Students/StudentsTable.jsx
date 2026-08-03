@@ -9,7 +9,7 @@ function StudentsTable({ students, onEditar, onTrasladar, onEliminar }) {
     <div className="overflow-x-auto rounded-2xl border border-[#EEF1F6] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
       <div className="min-w-[620px]">
         <div className="grid grid-cols-[1.7fr_90px_90px_110px_120px] border-b border-[#EEF1F6] bg-[#F8FAFC] text-[11px] font-extrabold uppercase tracking-wider text-[#94A3B8]">
-          <div className="px-4 py-3">Estudiante</div>
+          <div className="sticky left-0 z-20 bg-[#F8FAFC] px-4 py-3">Estudiante</div>
           <div className="py-3 text-center">Prom.</div>
           <div className="py-3 text-center">Asist.</div>
           <div className="px-4 py-3 text-center">Estado</div>
@@ -24,7 +24,8 @@ function StudentsTable({ students, onEditar, onTrasladar, onEliminar }) {
           >
             <div
               onClick={() => navigate(`/inicio/${centroId}/grupos/${groupId}/estudiantes/${student.id}`)}
-              className="press flex items-center gap-2.5 px-4 py-2.5"
+              className="press sticky left-0 z-10 flex items-center gap-2.5 px-4 py-2.5"
+              style={{ background: student.status.bg }}
             >
               <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-white/70 text-[11.5px] font-extrabold text-[#334155]">
                 {student.initials}

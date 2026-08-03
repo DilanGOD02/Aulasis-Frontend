@@ -39,7 +39,7 @@ function GradesTable({ students, columns, onGradeChange, onGradeCommit, onOpenRu
           style={{ gridTemplateColumns: templateColumns, gridTemplateRows: 'auto auto' }}
         >
           <div
-            className="flex items-center border-r border-black px-4 py-2.5 text-white"
+            className="sticky left-0 z-20 flex items-center border-r border-black px-4 py-2.5 text-white"
             style={{ gridColumn: '1', gridRow: '1 / 3', background: HEADER_DARK }}
           >
             Estudiante
@@ -96,7 +96,7 @@ function GradesTable({ students, columns, onGradeChange, onGradeCommit, onOpenRu
             className="grid items-center border-t border-[#F4F6F9]"
             style={{ gridTemplateColumns: templateColumns }}
           >
-            <div className="flex items-center gap-2.5 border-r border-black px-4 py-2">
+            <div className="sticky left-0 z-10 flex items-center gap-2.5 border-r border-black bg-white px-4 py-2">
               <span
                 className="h-1.5 w-1.5 shrink-0 rounded-full"
                 style={{ background: DOT_BY_STATUS[student.status.key] }}

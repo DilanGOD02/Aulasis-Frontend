@@ -16,7 +16,7 @@ function GradesGlobalTable({ students, periodos }) {
           className="grid border-b border-[#EEF1F6] bg-[#FAFBFD] text-[11px] font-extrabold uppercase tracking-wider text-[#94A3B8]"
           style={{ gridTemplateColumns: templateColumns }}
         >
-          <div className="px-4 py-2.5">Estudiante</div>
+          <div className="sticky left-0 z-20 bg-[#FAFBFD] px-4 py-2.5">Estudiante</div>
           {periodos.map((p) => (
             <div key={p.id} className="py-2.5 text-center">
               {p.nombre}
@@ -34,7 +34,7 @@ function GradesGlobalTable({ students, periodos }) {
             className="grid items-center border-t border-[#F4F6F9]"
             style={{ gridTemplateColumns: templateColumns }}
           >
-            <div className="flex items-center gap-2.5 px-4 py-2">
+            <div className="sticky left-0 z-10 flex items-center gap-2.5 bg-white px-4 py-2">
               <span
                 className="h-1.5 w-1.5 shrink-0 rounded-full"
                 style={{ background: DOT_BY_STATUS[student.status.key] }}

@@ -17,7 +17,7 @@ function CategoryFilterPills({ filters, active, onChange, actions }) {
         ))}
       </div>
 
-      <div className="ml-auto flex items-center gap-2.5">
+      <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto sm:flex-nowrap sm:gap-2.5">
         {actions}
         <div className="flex items-center gap-1.5 whitespace-nowrap rounded-[11px] bg-[#ECFDF3] px-3.5 py-2 text-[13px] font-bold text-[#15803D]">
           <i className="ph-fill ph-check-circle text-[16px]" />
