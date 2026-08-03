@@ -76,15 +76,21 @@ function StudentIdentityCard({ student, group, groupId, studentId }) {
               </div>
               <div>
                 <span className="text-[19px] font-extrabold leading-none text-[#C2410C]">
-                  {student.asistenciaCounts.tardiaInjustificada + student.asistenciaCounts.tardiaJustificada}
+                  {student.asistenciaCounts.tardiaInjustificada}
                 </span>
                 <div className="text-[10.5px] font-bold text-[#64748B]">tardía</div>
               </div>
               <div>
                 <span className="text-[19px] font-extrabold leading-none text-[#DC2626]">
-                  {student.asistenciaCounts.ausenteInjustificada + student.asistenciaCounts.ausenteJustificada}
+                  {student.asistenciaCounts.ausenteInjustificada}
                 </span>
                 <div className="text-[10.5px] font-bold text-[#64748B]">ausente</div>
+              </div>
+              <div>
+                <span className="text-[19px] font-extrabold leading-none text-[#475569]">
+                  {student.asistenciaCounts.ausenteJustificada + student.asistenciaCounts.tardiaJustificada}
+                </span>
+                <div className="text-[10.5px] font-bold text-[#64748B]">justif.</div>
               </div>
             </div>
           ) : (

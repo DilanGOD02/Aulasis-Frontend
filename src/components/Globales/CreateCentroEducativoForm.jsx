@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { centrosEducativosService } from '../../services/centrosEducativosService';
 import { useToast } from '../../context/ToastContext';
 import ImageUploader from './ImageUploader';
+import LoadingOverlay from './LoadingOverlay';
 import { COLORS } from './colorPalette';
 
 /**
@@ -97,6 +98,8 @@ function CreateCentroEducativoForm({ centroId }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-wrap items-start gap-[18px]">
+      <LoadingOverlay show={isSubmitting} message={isEditMode ? 'Guardando centro…' : 'Creando centro…'} />
+
       <div className="flex-[2] min-w-[300px] rounded-2xl border border-[#EEF1F6] bg-white p-5 sm:p-6">
         <div className="mb-5">
           <ImageUploader

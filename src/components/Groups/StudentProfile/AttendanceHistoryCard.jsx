@@ -19,7 +19,12 @@ function dateLabelOf(fecha) {
 
 /** "Historial de asistencia" — asistencias reales de esta matrícula, más recientes primero. */
 function AttendanceHistoryCard({ historial, student }) {
-  const counts = historial.reduce((acc, h) => ({ ...acc, [h.estado]: (acc[h.estado] ?? 0) + 1 }), {});
+  // Las justificadas se cuentan aparte (abajo) — no las sumamos también acá,
+  // si no un mismo día aparecería contado dos veces (en "ausente"/"tardía" Y en "justif.").
+  const counts = historial.reduce((acc, h) => {
+    if (h.justificada) return acc;
+    return { ...acc, [h.estado]: (acc[h.estado] ?? 0) + 1 };
+  }, {});
   const justificadas = historial.filter((h) => h.justificada).length;
 
   const totalLecciones = student?.totalLeccionesPeriodo ?? null;
@@ -50,11 +55,11 @@ function AttendanceHistoryCard({ historial, student }) {
             <span className="text-[#94A3B8]">Este periodo no tiene el total de lecciones declarado.</span>
           ) : (
             <span>
-              % de ausentismo:{' '}
+              {(totalLecciones - (leccionesPerdidas ?? 0))} de {totalLecciones} lecciones asistidas ·{' '}
               <span style={{ color: (porcentajeAusentismo ?? 0) >= 50 ? '#DC2626' : '#C2410C' }}>
-                {porcentajeAusentismo != null ? `${Math.round(porcentajeAusentismo)}%` : '—'}
+                {porcentajeAusentismo != null ? `${Math.round(porcentajeAusentismo)}%` : '—'} de ausentismo
               </span>{' '}
-              · {leccionesPerdidas ?? 0} de {totalLecciones} lecciones perdidas
+              <span className="font-semibold text-[#94A3B8]">({leccionesPerdidas ?? 0} lecciones perdidas)</span>
             </span>
           )}
         </div>
@@ -63,7 +68,11 @@ function AttendanceHistoryCard({ historial, student }) {
       {historial.length === 0 ? (
         <div className="py-2 text-[13.5px] font-semibold text-[#94A3B8]">Todavía no hay asistencia registrada.</div>
       ) : (
-        <div className="flex flex-wrap gap-2.5">
+        <>
+          <div className="mb-2 text-[12px] font-extrabold uppercase tracking-wider text-[#94A3B8]">
+            Asistencia por día
+          </div>
+          <div className="flex flex-wrap gap-2.5">
           {historial.map((entry) => {
             const { icon, bg, color, label } = STATUS_STYLE[entry.estado] ?? STATUS_STYLE.presente;
             return (
@@ -84,7 +93,8 @@ function AttendanceHistoryCard({ historial, student }) {
               </div>
             );
           })}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

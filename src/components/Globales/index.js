@@ -10,3 +10,4 @@ export { default as CreateCentroEducativoForm } from './CreateCentroEducativoFor
 export { default as ImageUploader } from './ImageUploader';
 export { default as TimeField12h } from './TimeField12h';
 export { default as OnboardingTour } from './Onboarding/OnboardingTour';
+export { default as LoadingOverlay } from './LoadingOverlay';

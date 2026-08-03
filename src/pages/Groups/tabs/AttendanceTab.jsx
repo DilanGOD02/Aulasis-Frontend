@@ -9,6 +9,7 @@ import {
   countByStatus,
   DEFAULT_ENTRY,
 } from '../../../components/Groups/Attendance';
+import { LoadingOverlay } from '../../../components/Globales';
 import { asistenciasService } from '../../../services/asistenciasService';
 import { leccionesParaFecha, leccionesPerdidasPorTardanza } from '../../../utils/attendanceLecciones';
 
@@ -274,6 +275,8 @@ function AttendanceTab() {
 
   return (
     <>
+      <LoadingOverlay show={isSaving} message="Guardando asistencia…" />
+
       <AttendanceStatCards counts={counts} />
 
       <div className="mb-3.5 flex flex-wrap items-center gap-2.5">

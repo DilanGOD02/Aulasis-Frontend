@@ -71,7 +71,7 @@ function GroupsDetailsPage() {
 
   return (
     <>
-      <GroupPageHeader group={group} onRecalculado={reloadGroup} />
+      <GroupPageHeader group={group} />
       <div className="mt-4">
         <GroupTabs
           group={group}

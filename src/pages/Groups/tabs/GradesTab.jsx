@@ -6,10 +6,14 @@ import {
   GradesGlobalTable,
   RubricaGradingModal,
   ExportMenu,
+  RecalcularButton,
   buildGradeColumns,
   buildGradeFilters,
 } from '../../../components/Groups/Grades';
+import { LoadingOverlay } from '../../../components/Globales';
 import { notasService } from '../../../services/notasService';
+import { gruposService } from '../../../services/gruposService';
+import { useToast } from '../../../context/ToastContext';
 import { statusMeta } from '../../../utils/statusMeta';
 
 const LEGEND = [
@@ -22,10 +26,25 @@ const LEGEND = [
 
 function GradesTab() {
   const { group, reloadGroup, updateStudentGrade } = useOutletContext();
+  const { showToast } = useToast();
   const [students, setStudents] = useState(group.students);
   const [activeFilterKey, setActiveFilterKey] = useState('all');
   const [rubricaAbierta, setRubricaAbierta] = useState(null); // { studentId, itemId, studentName } | null
+  const [isRecalculando, setIsRecalculando] = useState(false);
   const periodoLectivoId = group.periodoSeleccionadoId ?? group.periodoActualId;
+
+  const handleRecalcular = async () => {
+    setIsRecalculando(true);
+    try {
+      await gruposService.recalcularGrupo(group.id);
+      await reloadGroup();
+      showToast('Promedios y asistencia actualizados', 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setIsRecalculando(false);
+    }
+  };
 
   useEffect(() => {
     setStudents(group.students);
@@ -79,12 +98,17 @@ function GradesTab() {
   if (group.modo === 'global') {
     return (
       <>
+        <LoadingOverlay show={isRecalculando} message="Actualizando cálculos…" />
+
         <div className="mb-3 flex items-center justify-between gap-2 text-[13px] font-semibold text-[#64748B]">
           <div className="flex items-center gap-1.5">
             <i className="ph ph-info text-[16px] text-[var(--brand)]" />
             Anual (solo lectura): la nota ya obtenida en cada periodo y la nota final (su promedio).
           </div>
-          <ExportMenu group={group} students={students} />
+          <div className="flex shrink-0 items-center gap-2.5">
+            <RecalcularButton onClick={handleRecalcular} isLoading={isRecalculando} />
+            <ExportMenu group={group} students={students} />
+          </div>
         </div>
 
         <GradesGlobalTable students={students} periodos={group.periodos} />
@@ -107,11 +131,18 @@ function GradesTab() {
 
   return (
     <>
+      <LoadingOverlay show={isRecalculando} message="Actualizando cálculos…" />
+
       <CategoryFilterPills
         filters={filters}
         active={activeFilterKey}
         onChange={setActiveFilterKey}
-        actions={<ExportMenu group={group} students={students} />}
+        actions={
+          <>
+            <RecalcularButton onClick={handleRecalcular} isLoading={isRecalculando} />
+            <ExportMenu group={group} students={students} />
+          </>
+        }
       />
 
       <div className="mb-3 flex items-center gap-1.5 text-[13px] font-semibold text-[#64748B]">

@@ -9,6 +9,7 @@ import { formatHora12 } from '../../utils/time12h';
 import { useToast } from '../../context/ToastContext';
 import ImageUploader from './ImageUploader';
 import TimeField12h from './TimeField12h';
+import LoadingOverlay from './LoadingOverlay';
 import { COLORS } from './colorPalette';
 import { tieneFeature, MATERIAS_ESCUELA_SUGERIDAS } from '../../utils/centerTypeFeatures';
 
@@ -286,6 +287,8 @@ useEffect(() => {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-wrap items-start gap-[18px]">
+      <LoadingOverlay show={isSubmitting} message={isEditMode ? 'Guardando grupo…' : 'Creando grupo…'} />
+
       <div className="flex-[2] min-w-[300px] rounded-2xl border border-[#EEF1F6] bg-white p-5 sm:p-6">
         <div className="mb-5 flex gap-3">
           <div className="flex-1">

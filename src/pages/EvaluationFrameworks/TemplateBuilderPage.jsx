@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { PageHeader } from '../../components/Globales';
+import { PageHeader, LoadingOverlay } from '../../components/Globales';
 import { SchemaBuilderForm } from '../../components/EvaluationFrameworks';
 import { esquemasService } from '../../services/esquemasService';
 import { mapEsquemaDetail, toEsquemaPayload } from '../../utils/mappers';
@@ -22,6 +22,7 @@ function TemplateBuilderPage() {
   const [isLoading, setIsLoading] = useState(!isNew);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (isNew) return;
@@ -51,6 +52,7 @@ function TemplateBuilderPage() {
 
   const handleSave = async (categories, nombre) => {
     setError('');
+    setIsSaving(true);
     try {
       if (isNew) {
         await esquemasService.create(toEsquemaPayload(categories, nombre));
@@ -61,6 +63,7 @@ function TemplateBuilderPage() {
       navigate('/esquemas');
     } catch (err) {
       setError(err.message);
+      setIsSaving(false);
     }
   };
 
@@ -100,6 +103,8 @@ function TemplateBuilderPage() {
 
   return (
     <>
+      <LoadingOverlay show={isSaving} message={isNew ? 'Creando esquema…' : 'Guardando esquema…'} />
+
       <PageHeader title="Constructor de evaluación" crumb="Esquemas de evaluación" showBack />
       <div className="flex-1 px-4 py-5 sm:px-6 sm:py-6">
         {error && (
