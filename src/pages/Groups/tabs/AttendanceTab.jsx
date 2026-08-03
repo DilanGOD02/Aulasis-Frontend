@@ -279,48 +279,55 @@ function AttendanceTab() {
 
       <AttendanceStatCards counts={counts} />
 
-      <div className="mb-3.5 flex flex-wrap items-center gap-2.5">
-        <label className="flex items-center gap-2 rounded-[11px] border border-[#E8ECF2] bg-white px-3.5 py-2">
-          <i className="ph-bold ph-calendar-blank text-[16px] text-[var(--brand)]" />
-          <span className="text-[13px] font-bold text-[#475569]">Fecha:</span>
-          <input
-            type="date"
-            value={fecha}
-            min={periodoActivo?.fechaInicio}
-            max={
-              periodoActivo?.fechaFin && periodoActivo.fechaFin < todayLocalDateString()
-                ? periodoActivo.fechaFin
-                : todayLocalDateString()
-            }
-            onChange={(e) => {
-              setSaved(false);
-              setFecha(e.target.value);
-            }}
-            className="border-none bg-transparent text-[13px] font-bold text-[#1E293B] outline-none"
-          />
-        </label>
-        <label className="flex items-center gap-2 rounded-[11px] border border-[#E8ECF2] bg-white px-3.5 py-2">
-          <i className="ph-bold ph-hash text-[16px] text-[var(--brand)]" />
-          <span className="text-[13px] font-bold text-[#475569]">Lecciones de hoy:</span>
-          <input
-            type="number"
-            min={1}
-            value={lecciones}
-            onChange={(e) => setLeccionesDia(e.target.value)}
-            className="w-14 border-none bg-transparent text-[13px] font-bold text-[#1E293B] outline-none"
-          />
-        </label>
-        {periodoActivo && (
-          <span className="rounded-full bg-[#EEF2F7] px-2.5 py-1 text-[11.5px] font-extrabold text-[#475569]">
-            {periodoActivo.nombre}
-          </span>
+      <div className="mb-3.5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2.5">
+        <div className="grid grid-cols-2 gap-2 sm:contents">
+          <label className="flex items-center gap-1.5 rounded-[11px] border border-[#E8ECF2] bg-white px-2.5 py-2 sm:gap-2 sm:px-3.5">
+            <i className="ph-bold ph-calendar-blank shrink-0 text-[16px] text-[var(--brand)]" />
+            <span className="hidden text-[13px] font-bold text-[#475569] sm:inline">Fecha:</span>
+            <input
+              type="date"
+              value={fecha}
+              min={periodoActivo?.fechaInicio}
+              max={
+                periodoActivo?.fechaFin && periodoActivo.fechaFin < todayLocalDateString()
+                  ? periodoActivo.fechaFin
+                  : todayLocalDateString()
+              }
+              onChange={(e) => {
+                setSaved(false);
+                setFecha(e.target.value);
+              }}
+              className="min-w-0 flex-1 border-none bg-transparent text-[13px] font-bold text-[#1E293B] outline-none"
+            />
+          </label>
+          <label className="flex items-center gap-1.5 rounded-[11px] border border-[#E8ECF2] bg-white px-2.5 py-2 sm:gap-2 sm:px-3.5">
+            <i className="ph-bold ph-hash shrink-0 text-[16px] text-[var(--brand)]" />
+            <span className="hidden whitespace-nowrap text-[13px] font-bold text-[#475569] sm:inline">Lecciones de hoy:</span>
+            <span className="whitespace-nowrap text-[13px] font-bold text-[#475569] sm:hidden">Lecciones:</span>
+            <input
+              type="number"
+              min={1}
+              value={lecciones}
+              onChange={(e) => setLeccionesDia(e.target.value)}
+              className="w-10 min-w-0 border-none bg-transparent text-[13px] font-bold text-[#1E293B] outline-none sm:w-14"
+            />
+          </label>
+        </div>
+        {(periodoActivo || !isHoy) && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {periodoActivo && (
+              <span className="rounded-full bg-[#EEF2F7] px-2.5 py-1 text-[11.5px] font-extrabold text-[#475569]">
+                {periodoActivo.nombre}
+              </span>
+            )}
+            {!isHoy && (
+              <span className="rounded-full bg-[#EEF2FF] px-2.5 py-1 text-[11.5px] font-extrabold text-[#4338CA]">
+                Editando un día pasado
+              </span>
+            )}
+          </div>
         )}
-        {!isHoy && (
-          <span className="rounded-full bg-[#EEF2FF] px-2.5 py-1 text-[11.5px] font-extrabold text-[#4338CA]">
-            Editando un día pasado
-          </span>
-        )}
-        <div className="ml-auto">
+        <div className="sm:ml-auto">
           <AttendanceExportMenu group={group} fecha={fecha} students={group.students} statusById={statusById} />
         </div>
       </div>

@@ -138,9 +138,9 @@ function RiskStudentCard({ student, highlighted, cardRef }) {
       </button>
 
       {showDetalle && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:hidden" onClick={() => setShowDetalle(false)}>
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 sm:hidden" onClick={() => setShowDetalle(false)}>
           <div
-            className="w-full max-w-[520px] rounded-t-2xl bg-white p-5 shadow-[0_-20px_50px_-20px_rgba(16,24,40,0.4)]"
+            className="w-full max-w-[520px] rounded-t-2xl bg-white p-5 pb-[max(20px,env(safe-area-inset-bottom))] shadow-[0_-20px_50px_-20px_rgba(16,24,40,0.4)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-start justify-between gap-2">

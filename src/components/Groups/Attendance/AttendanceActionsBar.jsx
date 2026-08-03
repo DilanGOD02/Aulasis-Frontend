@@ -1,7 +1,7 @@
-/** Quick actions above the roster: mark everyone present, scan QR, open the attendance history. */
+/** Quick actions above the roster: mark everyone present, open the attendance history. */
 function AttendanceActionsBar({ onMarkAllPresent, onVerResumen }) {
   return (
-    <div className="mb-3.5 flex flex-wrap items-center gap-2.5">
+    <div className="mb-3.5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2.5">
       <button
         type="button"
         onClick={onMarkAllPresent}
@@ -10,13 +10,14 @@ function AttendanceActionsBar({ onMarkAllPresent, onVerResumen }) {
         <i className="ph ph-checks text-[16px] text-[#16A34A]" />
         Marcar todos presentes
       </button>
-      <button
+      {/* Escaneo QR: pendiente de implementar (el botón no tenía onClick) — oculto por ahora. */}
+      {/* <button
         type="button"
         className="press flex items-center gap-1.5 rounded-[11px] border border-[#E8ECF2] bg-white px-3.5 py-2 text-[13px] font-bold text-[#475569]"
       >
         <i className="ph ph-qr-code text-[16px] text-[#94A3B8]" />
         Escanear QR
-      </button>
+      </button> */}
       <button
         type="button"
         onClick={onVerResumen}
